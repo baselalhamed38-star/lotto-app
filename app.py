@@ -162,4 +162,3 @@ else:
     sys_type = st.selectbox("نوع النظام:", ["System 008 (8 Zahlen)", "System 010 (10 Zahlen)", "Full Matrix System"])
     if st.button("تفعيل وتطبيق النظام"):
         st.success(f"تم حساب وتوليد التشكيلات لـ {sys_type} بنجاح!")
-
