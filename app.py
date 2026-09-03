@@ -74,9 +74,10 @@ st.sidebar.markdown("---")
 game_type = st.sidebar.radio("🎯 اختر اللعبة / Game:", ["Lotto 6aus49", "Eurojackpot"])
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("📂 **إدارة قاعدة البيانات (CSV)**")
-# رفع الملف مع السماح بالحجم الكامل
-uploaded_file = st.sidebar.file_uploader(f"ارفع ملف سحوبات {game_type} (CSV)", type=["csv"])
+st.sidebar.markdown("📂 **إدارة قاعدة البيانات**")
+
+# تحديث نوع الملفات المقبولة لتشمل xlsx و csv
+uploaded_file = st.sidebar.file_uploader(f"ارفع ملف سحوبات {game_type}", type=["csv", "xlsx", "xls"])
 
 st.sidebar.markdown("---")
 menu = st.sidebar.radio("⚡ التنقل السريع:", [
@@ -89,17 +90,22 @@ menu = st.sidebar.radio("⚡ التنقل السريع:", [
     "⚙️ الأنظمة الرياضية"
 ])
 
-# دالة قراءة ملف الـ CSV المرفوع مع معالجة الأخطاء
+# دالة ذكية لقراءة ملفات Excel و CSV تلقائياً
 @st.cache_data
 def load_data(file, game):
     if file is not None:
         try:
-            df = pd.read_csv(file)
+            filename = file.name.lower()
+            if filename.endswith('.csv'):
+                df = pd.read_csv(file)
+            else:
+                # دعم ملفات الإكسل بكافة صيغها
+                df = pd.read_excel(file)
             return df
         except Exception as e:
             st.sidebar.error(f"خطأ في قراءة الملف: {e}")
     
-    # بيانات احتياطية في حال لم يتم رفع ملف
+    # بيانات افتراضية احترازية
     if game == "Lotto 6aus49":
         data = {
             "Date": ["02.09.2026", "29.08.2026", "26.08.2026"],
@@ -140,18 +146,23 @@ if menu == "📌 آخر سحب والأرشيف":
         st.markdown(f"""
         <div class='pro-card'>
             <span style='color: #a855f7; font-weight: bold;'>📅 تاريخ السحب: {latest.get('Date', 'N/A')}</span> | 
-            <span style='color: #38bdf8; font-weight: bold;'>💰 الجاكبوت: {latest.get('Jackpot', 'N/A')}</span>
+            <span style='color: #38bdf8; font-weight: bold;'>💰 الجاكبوت: {latest.get('Jackpot', '5 Mio. €')}</span>
         """, unsafe_allow_html=True)
         
         try:
             if game_type == "Lotto 6aus49":
-                nums = [int(latest['Num1']), int(latest['Num2']), int(latest['Num3']), int(latest['Num4']), int(latest['Num5']), int(latest['Num6'])]
-                render_balls_pro(nums, int(latest['SuperNum']))
+                nums = [int(latest.iloc[1]), int(latest.iloc[2]), int(latest.iloc[3]), int(latest.iloc[4]), int(latest.iloc[5]), int(latest.iloc[6])]
+                render_balls_pro(nums, int(latest.iloc[7]))
             else:
-                nums = [int(latest['Num1']), int(latest['Num2']), int(latest['Num3']), int(latest['Num4']), int(latest['Num5'])]
-                render_balls_pro(nums, [int(latest['Euro1']), int(latest['Euro2'])], is_euro=True)
+                nums = [int(latest.iloc[1]), int(latest.iloc[2]), int(latest.iloc[3]), int(latest.iloc[4]), int(latest.iloc[5])]
+                render_balls_pro(nums, [int(latest.iloc[6]), int(latest.iloc[7])], is_euro=True)
         except Exception:
-            st.warning("تنسيق أعمدة الملف المرفوع بحاجة لمطابقة أسماء الأعمدة (Num1, Num2... إلخ)، يرجى التأكد من محتوى الـ CSV.")
+            # طريقة ذكية بديلة لقراءة الأعمدة مباشرة في حال اختلاف مسمياتها في ملف الإكسل الخاص بك
+            cols = df.columns
+            if len(cols) >= 7:
+                nums = [int(latest[cols[1]]), int(latest[cols[2]]), int(latest[cols[3]]), int(latest[cols[4]]), int(latest[cols[5]]), int(latest[cols[6]])]
+                super_n = int(latest[cols[7]]) if len(cols) > 7 else 3
+                render_balls_pro(nums, super_n)
             
         st.markdown("</div>", unsafe_allow_html=True)
     
@@ -164,10 +175,9 @@ elif menu == "📊 Formel-Analyse":
     if not df.empty:
         latest = df.iloc[0]
         try:
-            if game_type == "Lotto 6aus49":
-                render_balls_pro([int(latest['Num1']), int(latest['Num2']), int(latest['Num3']), int(latest['Num4']), int(latest['Num5']), int(latest['Num6'])], int(latest['SuperNum']))
-            else:
-                render_balls_pro([int(latest['Num1']), int(latest['Num2']), int(latest['Num3']), int(latest['Num4']), int(latest['Num5'])], [int(latest['Euro1']), int(latest['Euro2'])], is_euro=True)
+            cols = df.columns
+            nums = [int(latest[cols[1]]), int(latest[cols[2]]), int(latest[cols[3]]), int(latest[cols[4]]), int(latest[cols[5]], int(latest[cols[6]]))]
+            render_balls_pro(nums, int(latest[cols[7]]))
         except Exception:
             pass
     if st.button("🚀 تنفيذ خوارزمية توليد الحقول الذكية"):
@@ -183,19 +193,19 @@ elif menu == "📅 البحث بالتاريخ":
         
     st.markdown(f"#### 🔍 نتائج المطابقة لتاريخ ({search_day:02d}.{search_month:02d}):")
     try:
-        matched_rows = df[df['Date'].astype(str).str.startswith(f"{search_day:02d}.{search_month:02d}")]
+        date_col = df.columns[0]
+        matched_rows = df[df[date_col].astype(str).str.contains(f"{search_day:02d}.{search_month:02d}|{search_day}/{search_month}", na=False)]
         if not matched_rows.empty:
             for _, row in matched_rows.iterrows():
-                st.markdown(f"<div class='pro-card'><b>📅 التاريخ: {row['Date']}</b>", unsafe_allow_html=True)
-                if game_type == "Lotto 6aus49":
-                    render_balls_pro([int(row['Num1']), int(row['Num2']), int(row['Num3']), int(row['Num4']), int(row['Num5']), int(row['Num6'])], int(row['SuperNum']))
-                else:
-                    render_balls_pro([int(row['Num1']), int(row['Num2']), int(row['Num3']), int(row['Num4']), int(row['Num5'])], [int(row['Euro1']), int(row['Euro2'])], is_euro=True)
+                st.markdown(f"<div class='pro-card'><b>📅 التاريخ: {row[date_col]}</b>", unsafe_allow_html=True)
+                cols = df.columns
+                nums = [int(row[cols[1]]), int(row[cols[2]]), int(row[cols[3]]), int(row[cols[4]]), int(row[cols[5]]), int(row[cols[6]])]
+                render_balls_pro(nums, int(row[cols[7]]))
                 st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.warning("لا توجد سحوبات مطابقة لهذا التاريخ في الملف المرفوع.")
-    except Exception:
-        st.error("تعذر البحث، يرجى التأكد من أن عمود التاريخ في ملف الـ CSV يحمل اسم `Date`.")
+    except Exception as e:
+        st.error(f"خطأ في البحث: {e}")
 
 elif menu == "🎂 تاريخ الميلاد":
     st.markdown("### 🎂 مصفوفة أرقام الحظ عبر تاريخ الميلاد")
