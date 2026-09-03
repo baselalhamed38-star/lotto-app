@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import random
 
-# 1. إعدادات الصفحة والتصميم الاحترافي
+# 1. إعدادات الصفحة والتصميم
 st.set_page_config(
     page_title="LOTTO MATRIX PRO", 
     page_icon="🌟", 
@@ -68,7 +68,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. القائمة الجانبية
+# 2. القائمة الجانبية لإدارة الملفات والتبويب
 st.sidebar.markdown("### 🌟 LOTTO MATRIX PRO")
 st.sidebar.markdown("---")
 
@@ -78,7 +78,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("📂 **إدارة قواعد البيانات (رفع الملفات)**")
 
 uploaded_files = st.sidebar.file_uploader(
-    "ارفع ملفات السحوبات (حتى 6 ملفات معاً)", 
+    "ارفع ملفات السحوبات (CSV أو Excel)", 
     type=["csv", "xlsx", "xls"], 
     accept_multiple_files=True
 )
@@ -93,7 +93,7 @@ menu = st.sidebar.radio("⚡ التنقل السريع:", [
     "⚙️ الأنظمة الرياضية"
 ])
 
-# دالة ذكية لقراءة جميع الملفات والأوراق (Sheets) في إكسل ودمجها بدقة
+# دالة ذكية لقراءة الملفات مع دعم كامل لـ openpyxl والـ CSV مع معالجة الأخطاء
 @st.cache_data
 def load_all_data(files, game):
     dfs = []
@@ -103,35 +103,33 @@ def load_all_data(files, game):
                 filename = file.name.lower()
                 if filename.endswith('.csv'):
                     try:
-                        temp_df = pd.read_csv(file, encoding='utf-8')
+                        temp_df = pd.read_csv(file, encoding='utf-8', on_bad_lines='skip')
                     except UnicodeDecodeError:
                         file.seek(0)
-                        temp_df = pd.read_csv(file, encoding='latin-1')
+                        temp_df = pd.read_csv(file, encoding='latin-1', on_bad_lines='skip')
                     dfs.append(temp_df)
                 else:
-                    # قراءة جميع الـ Sheets داخل ملف الإكسل الرسمي
+                    # قراءة ملفات الإكسل بكافة أوراقها
                     excel_file = pd.ExcelFile(file, engine='openpyxl')
                     for sheet_name in excel_file.sheet_names:
                         sheet_df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
                         dfs.append(sheet_df)
             except Exception as e:
-                st.sidebar.error(f"خطأ في قراءة {file.name}: {e}")
+                st.sidebar.error(f"تنبيه في قراءة {file.name}: تأكد من تثبيت مكتبة openpyxl.")
         if dfs:
-            # دمج البيانات لتشكل أرشيفاً ضخماً شاملاً
-            combined_df = pd.concat(dfs, ignore_index=True)
-            return combined_df
+            return pd.concat(dfs, ignore_index=True)
 
-    # بيانات افتراضية احترازية
+    # بيانات افتراضية احترازية في حال عدم رفع ملفات
     if game == "Lotto 6aus49":
         data = {
-            "Date": ["02.09.2026", "29.08.2026", "26.08.2026"],
+            "Date": ["05.09.2025", "29.08.2025", "26.08.2025"],
             "Num1": [8, 3, 12], "Num2": [19, 14, 19], "Num3": [23, 25, 27],
             "Num4": [32, 36, 34], "Num5": [44, 41, 42], "Num6": [45, 48, 48],
             "SuperNum": [8, 2, 7]
         }
     else:
         data = {
-            "Date": ["01.09.2026", "25.08.2026", "18.08.2026"],
+            "Date": ["05.09.2025", "25.08.2025", "18.08.2025"],
             "Num1": [9, 12, 3], "Num2": [14, 23, 17], "Num3": [35, 31, 28],
             "Num4": [43, 42, 36], "Num5": [50, 49, 44],
             "Euro1": [3, 7, 2], "Euro2": [7, 9, 5]
@@ -153,14 +151,13 @@ def render_balls_pro(nums, super_nums, is_euro=False):
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
 
-# استخراج مرن للتواريخ والأرقام حتى من الأرشيف الرسمي المعقد
+# استخراج مرن للتواريخ والأرقام من الصفوف
 def extract_row_data(row):
     date_str = ""
     nums = []
     super_nums = 0
     is_euro = False
     
-    # البحث عن أي خلية تحتوي على تاريخ أو محتوى زمني داخل الصف
     for val in row.values:
         val_str = str(val)
         if "-" in val_str or "." in val_str or "/" in val_str:
@@ -170,12 +167,11 @@ def extract_row_data(row):
     if not date_str:
         date_str = str(row.iloc[1]) if len(row) > 1 else "N/A"
 
-    # محاولة استخراج الأرقام الصحيحة من الصف
     int_vals = []
     for val in row.values:
         try:
             iv = int(float(val))
-            if 1 <= iv <= 50: # نطاق أرقام اللوتو واليوروجاكبوت
+            if 1 <= iv <= 50:
                 int_vals.append(iv)
         except (ValueError, TypeError):
             continue
@@ -193,11 +189,11 @@ def extract_row_data(row):
 
     return date_str, nums, super_nums, is_euro
 
-# 3. عرض الأقسام الرئيسية
+# 3. واجهة الأقسام
 if menu == "📌 آخر سحب والأرشيف":
     st.markdown(f"### 🏆 أحدث السحوبات الرسمية - {game_type}")
     if not df.empty:
-        latest = df.iloc[-1] # جلب آخر سحب تم العثور عليه
+        latest = df.iloc[-1]
         date_str, nums, super_nums, is_euro = extract_row_data(latest)
         st.markdown(f"""
         <div class='pro-card'>
@@ -223,7 +219,6 @@ elif menu == "📅 البحث بالتاريخ (نفس اليوم والشهر)"
     try:
         for _, row in df.iterrows():
             row_text = " ".join([str(v) for v in row.values if pd.notna(v)])
-            # فحص مطابقة اليوم والشهر بتنسيقات مختلفة (. أو / أو -)
             day_str = f"{search_day:02d}"
             day_single = f"{search_day}"
             month_str = f"{search_month:02d}"
@@ -249,7 +244,6 @@ elif menu == "📅 البحث بالتاريخ (نفس اليوم والشهر)"
 
 elif menu == "🎲 توليد أرقام السحب القادم":
     st.markdown(f"### 🎲 المولد الذكي لأرقام السحب القادم ({game_type})")
-    st.info("يعتمد هذا الزر على تحليل الأرشيف المرفوع لتوليد تشكيلة متوازنة للسحب القادم.")
     if st.button("🚀 توليد توقعات السحب القادم"):
         max_limit = 49 if game_type == "Lotto 6aus49" else 50
         count = 6 if game_type == "Lotto 6aus49" else 5
@@ -283,7 +277,7 @@ elif menu == "🎂 تاريخ الميلاد":
 
 elif menu == "♈ الأبراج":
     st.markdown("### ♈ التحليل الفلكي والأبراج الذكية")
-    sign = st.selectbox("اختر برجك الفلكي:", ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"])
+    sign = st.selectbox("اختر برجك الفلكي:", ["الحمل", "الثور", "الجوزاء", "السرطان", "الأسد", "العذراء", "الميزان", "العقرب", "القوس", "الجدي", "الدلو", "الحوت"])
     if st.button("🔮 حساب التوافق والطاقة الفلكية"):
         st.markdown(f"<div class='pro-card'><b>✨ برج {sign}:</b> طاقة الأرقام الفردية مرتفعة لديك.", unsafe_allow_html=True)
         max_limit = 49 if game_type == "Lotto 6aus49" else 50
