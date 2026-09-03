@@ -68,7 +68,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. القائمة الجانبية لإدارة الملفات والتبويب
+# 2. القائمة الجانبية لإدارة الملفات
 st.sidebar.markdown("### 🌟 LOTTO MATRIX PRO")
 st.sidebar.markdown("---")
 
@@ -93,9 +93,9 @@ menu = st.sidebar.radio("⚡ التنقل السريع:", [
     "⚙️ الأنظمة الرياضية"
 ])
 
-# دالة ذكية لقراءة الملفات مع دعم كامل لـ openpyxl والـ CSV مع معالجة الأخطاء
+# دالة قراءة الملفات المرفوعة
 @st.cache_data
-def load_all_data(files, game):
+def load_all_data(files):
     dfs = []
     if files:
         for file in files:
@@ -109,34 +109,17 @@ def load_all_data(files, game):
                         temp_df = pd.read_csv(file, encoding='latin-1', on_bad_lines='skip')
                     dfs.append(temp_df)
                 else:
-                    # قراءة ملفات الإكسل بكافة أوراقها
                     excel_file = pd.ExcelFile(file, engine='openpyxl')
                     for sheet_name in excel_file.sheet_names:
                         sheet_df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
                         dfs.append(sheet_df)
             except Exception as e:
-                st.sidebar.error(f"تنبيه في قراءة {file.name}: تأكد من تثبيت مكتبة openpyxl.")
+                st.sidebar.error(f"خطأ في قراءة {file.name}: {e}")
         if dfs:
             return pd.concat(dfs, ignore_index=True)
+    return pd.DataFrame()
 
-    # بيانات افتراضية احترازية في حال عدم رفع ملفات
-    if game == "Lotto 6aus49":
-        data = {
-            "Date": ["05.09.2025", "29.08.2025", "26.08.2025"],
-            "Num1": [8, 3, 12], "Num2": [19, 14, 19], "Num3": [23, 25, 27],
-            "Num4": [32, 36, 34], "Num5": [44, 41, 42], "Num6": [45, 48, 48],
-            "SuperNum": [8, 2, 7]
-        }
-    else:
-        data = {
-            "Date": ["05.09.2025", "25.08.2025", "18.08.2025"],
-            "Num1": [9, 12, 3], "Num2": [14, 23, 17], "Num3": [35, 31, 28],
-            "Num4": [43, 42, 36], "Num5": [50, 49, 44],
-            "Euro1": [3, 7, 2], "Euro2": [7, 9, 5]
-        }
-    return pd.DataFrame(data)
-
-df = load_all_data(uploaded_files, game_type)
+df = load_all_data(uploaded_files)
 
 def render_balls_pro(nums, super_nums, is_euro=False):
     html = "<div class='ball-container'>"
@@ -151,59 +134,70 @@ def render_balls_pro(nums, super_nums, is_euro=False):
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
 
-# استخراج مرن للتواريخ والأرقام من الصفوف
-def extract_row_data(row):
-    date_str = ""
-    nums = []
-    super_nums = 0
-    is_euro = False
+# استخراج مستقل وخاص بكل لعبة حسب قوانينها الدقيقة
+def extract_row_data(row, is_euro_game):
+    date_str = "N/A"
+    int_vals = []
     
     for val in row.values:
-        val_str = str(val)
-        if "-" in val_str or "." in val_str or "/" in val_str:
-            if len(val_str) >= 8:
-                date_str = val_str[:10]
-                break
-    if not date_str:
-        date_str = str(row.iloc[1]) if len(row) > 1 else "N/A"
-
-    int_vals = []
-    for val in row.values:
-        try:
-            iv = int(float(val))
-            if 1 <= iv <= 50:
-                int_vals.append(iv)
-        except (ValueError, TypeError):
-            continue
+        if pd.notna(val):
+            val_str = str(val).strip()
+            if ("-" in val_str or "." in val_str) and len(val_str) >= 8 and any(char.isdigit() for char in val_str):
+                if date_str == "N/A":
+                    date_str = val_str[:10]
+            try:
+                iv = int(float(val_str))
+                if 1 <= iv <= 50:
+                    int_vals.append(iv)
+            except (ValueError, TypeError):
+                continue
+                
+    valid_nums = []
+    for iv in int_vals:
+        if iv not in valid_nums:
+            valid_nums.append(iv)
             
-    if len(int_vals) >= 6:
-        nums = int_vals[:6]
-        super_nums = int_vals[6] if len(int_vals) > 6 else 3
-    elif len(int_vals) >= 5:
-        nums = int_vals[:5]
-        super_nums = int_vals[5:7] if len(int_vals) >= 7 else [3, 7]
-        is_euro = True
+    if is_euro_game:
+        # يوروجاكبوت: 5 أرقام رئيسية + رقمان يورو
+        nums = valid_nums[:5] if len(valid_nums) >= 5 else [3, 12, 23, 35, 43]
+        super_nums = valid_nums[5:7] if len(valid_nums) >= 7 else [3, 7]
     else:
-        nums = [5, 12, 23, 34, 42, 48]
-        super_nums = 3
+        # لوتو 6aus49: 6 أرقام رئيسية + رقم خارجي واحد
+        nums = valid_nums[:6] if len(valid_nums) >= 6 else [5, 12, 23, 34, 42, 48]
+        super_nums = valid_nums[6] if len(valid_nums) >= 7 else 3
 
-    return date_str, nums, super_nums, is_euro
+    return date_str, nums, super_nums
+
+is_euro_mode = (game_type == "Eurojackpot")
 
 # 3. واجهة الأقسام
 if menu == "📌 آخر سحب والأرشيف":
     st.markdown(f"### 🏆 أحدث السحوبات الرسمية - {game_type}")
     if not df.empty:
-        latest = df.iloc[-1]
-        date_str, nums, super_nums, is_euro = extract_row_data(latest)
-        st.markdown(f"""
-        <div class='pro-card'>
-            <span style='color: #a855f7; font-weight: bold;'>📅 تاريخ السحب: {date_str[:10]}</span>
-        """, unsafe_allow_html=True)
-        render_balls_pro(nums, super_nums, is_euro=is_euro)
-        st.markdown("</div>", unsafe_allow_html=True)
+        valid_rows = []
+        for _, row in df.iterrows():
+            d_str, _, _ = extract_row_data(row, is_euro_mode)
+            if d_str != "N/A":
+                valid_rows.append(row)
+        
+        if valid_rows:
+            # عرض أحدث سحب (أول سحب تم العثور عليه في الأرشيف العلوي)
+            latest = valid_rows[0]
+            date_str, nums, super_nums = extract_row_data(latest, is_euro_mode)
+            st.markdown(f"""
+            <div class='pro-card'>
+                <span style='color: #a855f7; font-weight: bold;'>📅 تاريخ السحب: {date_str}</span>
+            """, unsafe_allow_html=True)
+            render_balls_pro(nums, super_nums, is_euro=is_euro_mode)
+            st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.warning("يرجى التأكد من رفع ملف الأرشيف الصحيح.")
+    else:
+        st.info("الرجاء رفع ملفات الأرشيف من القائمة الجانبية.")
     
     st.markdown("#### 📚 أرشيف السحوبات الكامل:")
-    st.dataframe(df.dropna(how='all'), use_container_width=True)
+    if not df.empty:
+        st.dataframe(df.dropna(how='all'), use_container_width=True)
 
 elif menu == "📅 البحث بالتاريخ (نفس اليوم والشهر)":
     st.markdown(f"### 📅 البحث عن السحوبات التي حدثت في نفس اليوم والشهر ({game_type})")
@@ -213,40 +207,43 @@ elif menu == "📅 البحث بالتاريخ (نفس اليوم والشهر)"
     with col2:
         search_month = st.number_input("الشهر (MM)", 1, 12, 9)
         
-    st.markdown(f"#### 🔍 نتائج مطابقة اليوم ({search_day:02d}.{search_month:02d}) في كل الأرشيف:")
+    st.markdown(f"#### 🔍 نتائج مطابقة اليوم ({search_day:02d}.{search_month:02d}) في الأرشيف:")
     
     matched_count = 0
-    try:
-        for _, row in df.iterrows():
-            row_text = " ".join([str(v) for v in row.values if pd.notna(v)])
-            day_str = f"{search_day:02d}"
-            day_single = f"{search_day}"
-            month_str = f"{search_month:02d}"
-            month_single = f"{search_month}"
-            
-            if (f"{day_str}.{month_str}" in row_text or 
-                f"{day_single}.{month_str}" in row_text or 
-                f"{day_str}/{month_str}" in row_text or
-                f"-{month_str}-{day_str}" in row_text or
-                f".{month_str}.{day_str}" in row_text):
+    if not df.empty:
+        try:
+            for _, row in df.iterrows():
+                row_text = " ".join([str(v) for v in row.values if pd.notna(v)])
+                day_str, day_single = f"{search_day:02d}", f"{search_day}"
+                month_str, month_single = f"{search_month:02d}", f"{search_month}"
                 
-                date_str, nums, super_nums, is_euro = extract_row_data(row)
-                if len(nums) >= 5:
-                    matched_count += 1
-                    st.markdown(f"<div class='pro-card'><b>📅 تاريخ السحب: {date_str[:10]}</b>", unsafe_allow_html=True)
-                    render_balls_pro(nums, super_nums, is_euro=is_euro)
-                    st.markdown("</div>", unsafe_allow_html=True)
+                if (f"{day_str}.{month_str}" in row_text or 
+                    f"{day_single}.{month_str}" in row_text or 
+                    f"{day_str}/{month_str}" in row_text or
+                    f"-{month_str}-{day_str}" in row_text or
+                    f".{month_str}.{day_str}" in row_text or
+                    f"{month_str}-{day_str}" in row_text):
                     
-        if matched_count == 0:
-            st.warning(f"لا توجد سحوبات مطابقة لتاريخ ({search_day:02d}.{search_month:02d}) في الأرشيف المرفوع.")
-    except Exception as e:
-        st.error(f"خطأ أثناء البحث: {e}")
+                    date_str, nums, super_nums = extract_row_data(row, is_euro_mode)
+                    min_req = 5 if is_euro_mode else 6
+                    if date_str != "N/A" and len(nums) >= min_req:
+                        matched_count += 1
+                        st.markdown(f"<div class='pro-card'><b>📅 تاريخ السحب: {date_str}</b>", unsafe_allow_html=True)
+                        render_balls_pro(nums, super_nums, is_euro=is_euro_mode)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                        
+            if matched_count == 0:
+                st.warning(f"لا توجد سحوبات مطابقة لتاريخ ({search_day:02d}.{search_month:02d}) في الأرشيف المرفوع.")
+        except Exception as e:
+            st.error(f"خطأ أثناء البحث: {e}")
+    else:
+        st.info("الرجاء رفع ملفات الأرشيف من القائمة الجانبية أولاً.")
 
 elif menu == "🎲 توليد أرقام السحب القادم":
     st.markdown(f"### 🎲 المولد الذكي لأرقام السحب القادم ({game_type})")
     if st.button("🚀 توليد توقعات السحب القادم"):
-        max_limit = 49 if game_type == "Lotto 6aus49" else 50
-        count = 6 if game_type == "Lotto 6aus49" else 5
+        max_limit = 50 if is_euro_mode else 49
+        count = 5 if is_euro_mode else 6
         for i in range(1, 4):
             score = round(random.uniform(94.5, 99.2), 1)
             st.markdown(f"""
@@ -257,8 +254,8 @@ elif menu == "🎲 توليد أرقام السحب القادم":
                 </div>
             """, unsafe_allow_html=True)
             gen_nums = sorted(random.sample(range(1, max_limit + 1), count))
-            gen_super = [random.randint(1, 5), random.randint(6, 12)] if game_type == "Eurojackpot" else random.randint(0, 9)
-            render_balls_pro(gen_nums, gen_super, is_euro=(game_type=="Eurojackpot"))
+            gen_super = [random.randint(1, 5), random.randint(6, 12)] if is_euro_mode else random.randint(0, 9)
+            render_balls_pro(gen_nums, gen_super, is_euro=is_euro_mode)
             st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "🎂 تاريخ الميلاد":
@@ -267,12 +264,12 @@ elif menu == "🎂 تاريخ الميلاد":
     if st.button("✨ استخراج أرقام الحظ الفلكية الرقمية"):
         d, m, y = b_date.day, b_date.month, b_date.year
         np.random.seed(d + m + y)
-        max_limit = 49 if game_type == "Lotto 6aus49" else 50
-        count = 6 if game_type == "Lotto 6aus49" else 5
+        max_limit = 50 if is_euro_mode else 49
+        count = 5 if is_euro_mode else 6
         b_nums = sorted(random.sample(range(1, max_limit + 1), count))
-        b_super = [random.randint(1, 5), random.randint(6, 12)] if game_type == "Eurojackpot" else random.randint(1, 9)
+        b_super = [random.randint(1, 5), random.randint(6, 12)] if is_euro_mode else random.randint(1, 9)
         st.markdown("<div class='pro-card'><b>🔮 أرقام الحظ الخاصة بتاريخ ميلادك:</b>", unsafe_allow_html=True)
-        render_balls_pro(b_nums, b_super, is_euro=(game_type=="Eurojackpot"))
+        render_balls_pro(b_nums, b_super, is_euro=is_euro_mode)
         st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "♈ الأبراج":
@@ -280,11 +277,11 @@ elif menu == "♈ الأبراج":
     sign = st.selectbox("اختر برجك الفلكي:", ["الحمل", "الثور", "الجوزاء", "السرطان", "الأسد", "العذراء", "الميزان", "العقرب", "القوس", "الجدي", "الدلو", "الحوت"])
     if st.button("🔮 حساب التوافق والطاقة الفلكية"):
         st.markdown(f"<div class='pro-card'><b>✨ برج {sign}:</b> طاقة الأرقام الفردية مرتفعة لديك.", unsafe_allow_html=True)
-        max_limit = 49 if game_type == "Lotto 6aus49" else 50
-        count = 6 if game_type == "Lotto 6aus49" else 5
+        max_limit = 50 if is_euro_mode else 49
+        count = 5 if is_euro_mode else 6
         z_nums = sorted(random.sample(range(1, max_limit + 1), count))
-        z_super = [2, 7] if game_type == "Eurojackpot" else 4
-        render_balls_pro(z_nums, z_super, is_euro=(game_type=="Eurojackpot"))
+        z_super = [2, 7] if is_euro_mode else 4
+        render_balls_pro(z_nums, z_super, is_euro=is_euro_mode)
         st.markdown("</div>", unsafe_allow_html=True)
 
 else:
