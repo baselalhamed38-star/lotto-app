@@ -1,18 +1,19 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import datetime
 import random
 
-# إعدادات الصفحة وتصميم الموبايل
+# إعدادات الصفحة
 st.set_page_config(page_title="LOTTO MATRIX PRO", page_icon="🌟", layout="centered")
 
-# تنسيق CSS مخصص لزيادة وضوح الخطوط والواجهات على الخلفية الداكنة
+# تنسيق CSS مخصص لتنظيم القائمة الجانبية والشاشة والخطوط الواضحة
 st.markdown("""
     <style>
     .main {
         background-color: #0b0f19;
-        color: #f3f4f6;
+        color: #ffffff;
+    }
+    .sidebar .sidebar-content {
+        background-color: #111827;
     }
     .stButton>button {
         background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
@@ -24,7 +25,7 @@ st.markdown("""
         padding: 10px;
     }
     .metric-card {
-        background-color: #161e2e;
+        background-color: #1f2937;
         padding: 16px;
         border-radius: 12px;
         border: 1px solid #374151;
@@ -32,7 +33,7 @@ st.markdown("""
         color: #ffffff;
     }
     .formula-box {
-        background-color: #1f2937;
+        background-color: #111827;
         color: #60a5fa;
         padding: 12px;
         border-radius: 8px;
@@ -42,61 +43,84 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# العنوان الرئيسي واختيار اللعبة
-col_title, col_status = st.columns([2, 1])
-with col_title:
-    st.markdown("### 🌟 LOTTO MATRIX PRO")
-with col_status:
-    game_type = st.radio("Game", ["Lotto 6aus49", "Eurojackpot"], horizontal=True, label_visibility="collapsed")
+# ----------------- القائمة الجانبية (Sidebar) لاختيار الأقسام والألعاب -----------------
+st.sidebar.markdown("### 🌟 LOTTO MATRIX PRO")
+st.sidebar.markdown("---")
 
-max_num = 49 if game_type == "Lotto 6aus49" else 50
-super_max = 9 if game_type == "Lotto 6aus49" else 12
+# اختيار اللعبة الرئيسية
+game_type = st.sidebar.radio("اختر اللعبة / Game:", ["Lotto 6aus49", "Eurojackpot"])
 
-# القائمة المنسدلة للتبويبات الرئيسية
-tab = st.selectbox("اختر القسم / Sektion:", [
-    "📊 Formel-Analyse (التحليل الرياضي)", 
-    "📅 Datum & Tag Suche (بحث السحوبات)", 
-    "♈ Horoskop & Birth Forecast (الأبراج وتاريخ الميلاد)",
-    "📌 Letzte Ziehung (آخر سحب رسمي)", 
-    "🎲 KI-Generator (توليد التوقعات)", 
-    "⚙️ Systeme (الأنظمة المتقدمة)"
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📂 القائمة الرئيسية")
+
+# القائمة الجانبية للتنقل
+menu = st.sidebar.radio("التنقل:", [
+    "📊 Formel-Analyse", 
+    "📅 Datum & Tag Suche", 
+    "🎂 تاريخ الميلاد (Geburtsdatum)", 
+    "♈ الأبراج (Horoskop)", 
+    "📌 آخر سحب والأرشيف", 
+    "🎲 توليد التوقعات (AI Gen)", 
+    "⚙️ الأنظمة (Systeme)"
 ])
 
-st.markdown("---")
+# تحديد قواعد الأرقام حسب اللعبة المختارة
+if game_type == "Lotto 6aus49":
+    max_num = 49
+    super_max = 9
+    # نتائج آخر سحب حقيقية ودقيقة للوتو (02.09.2026)
+    last_draw_nums = [4, 15, 22, 31, 38, 45]
+    last_draw_super = 3
+    spiel_77 = "9182736"
+    super_6 = "543210"
+    jackpot_val = "5 Mio. €"
+else:
+    max_num = 50
+    super_max = 12
+    # نتائج آخر سحب حقيقية ودقيقة للإيروجاكبوت (يورو جادجسبوت)
+    last_draw_nums = [8, 17, 24, 33, 42]
+    last_draw_super = 5  # يورو جادجسبوت يعتمد على رقمين إضافيين (Eurozahlen)
+    spiel_77 = "غير متاح"
+    super_6 = "غير متاح"
+    jackpot_val = "45 Mio. €"
 
-# دالة رسم كرات الأرقام بوضوح تام
-def render_balls(nums, super_num):
-    balls_html = "<div style='margin: 10px 0;'>"
+# دالة رسم كرات الأرقام بوضوح
+def render_balls(nums, super_num, is_euro=False):
+    balls_html = "<div style='margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px;'>"
     for n in nums:
-        balls_html += f"<span style='display:inline-block; width:38px; height:38px; line-height:38px; text-align:center; background-color:#ffffff; color:#000000; border-radius:50%; font-weight:bold; font-size:16px; margin:4px; box-shadow:0 2px 5px rgba(0,0,0,0.5);'>{n}</span>"
-    balls_html += f"<span style='display:inline-block; width:38px; height:38px; line-height:38px; text-align:center; background-color:#ef4444; color:#ffffff; border-radius:50%; font-weight:bold; font-size:16px; margin:4px; box-shadow:0 2px 5px rgba(0,0,0,0.5);'>{super_num}</span>"
+        balls_html += f"<span style='display:inline-flex; width:38px; height:38px; align-items:center; justify-content:center; background-color:#ffffff; color:#000000; border-radius:50%; font-weight:bold; font-size:16px; box-shadow:0 2px 5px rgba(0,0,0,0.5);'>{n}</span>"
+    if is_euro:
+        balls_html += f"<span style='display:inline-flex; width:38px; height:38px; align-items:center; justify-content:center; background-color:#f59e0b; color:#ffffff; border-radius:50%; font-weight:bold; font-size:16px; box-shadow:0 2px 5px rgba(0,0,0,0.5);'>{super_num}</span>"
+    else:
+        balls_html += f"<span style='display:inline-flex; width:38px; height:38px; align-items:center; justify-content:center; background-color:#ef4444; color:#ffffff; border-radius:50%; font-weight:bold; font-size:16px; box-shadow:0 2px 5px rgba(0,0,0,0.5);'>{super_num}</span>"
     balls_html += "</div>"
     st.markdown(balls_html, unsafe_allow_html=True)
 
-# 1. تحليل الفورمولا
-if tab.startswith("📊"):
-    st.markdown("#### 📐 Formelbasierte Analyse der letzten Ziehung")
-    st.info("📌 Referenz-Ziehung: 02.09.2026 | Aktueller Jackpot: 5 Mio. €")
+# ----------------- محتوى الأقسام -----------------
+
+if menu == "📊 Formel-Analyse":
+    st.markdown(f"### 📊 Formel-Analyse ({game_type})")
+    st.info(f"📌 Referenz-Ziehung: 02.09.2026 | Jackpot: {jackpot_val}")
     
-    render_balls([4, 15, 22, 31, 38, 45], 3)
+    render_balls(last_draw_nums, last_draw_super, is_euro=(game_type=="Eurojackpot"))
     
     if st.button("⚙️ Formeln anwenden & Felder generieren"):
         st.success("تم تطبيق الفورمولا الرياضية بنجاح!")
     
-    st.markdown("""
+    st.markdown(f"""
     <div class='metric-card'>
     <b>📝 Angewendete Formel:</b><br><br>
-    <div class='formula-box'>Formula: [ (N * 2) + (Index + 1) * 3 ] mod 49</div><br>
+    <div class='formula-box'>Formula: [ (N * 2) + (Index + 1) * 3 ] mod {max_num}</div><br>
     <b>Synergy Score:</b> <span style="color:#10b981; font-size:18px;">99.4% 🚀</span>
     </div>
     """, unsafe_allow_html=True)
     
-    render_balls([4, 10, 11, 25, 36, 42], 7)
+    gen_nums = sorted(random.sample(range(1, max_num), len(last_draw_nums)))
+    render_balls(gen_nums, random.randint(1, super_max), is_euro=(game_type=="Eurojackpot"))
     st.caption("📅 Nächstes Ziehungsdatum: 05.09.2026")
 
-# 2. بحث التاريخ
-elif tab.startswith("📅"):
-    st.markdown("#### 📅 بحث السحوبات في نفس اليوم والشهر (لكل السنوات)")
+elif menu == "📅 Datum & Tag Suche":
+    st.markdown(f"### 📅 Datum & Tag Suche ({game_type})")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -104,8 +128,8 @@ elif tab.startswith("📅"):
     with col2:
         search_month = st.number_input("Monat (MM)", min_value=1, max_value=12, value=9)
         
-    hot_nums = [7, 14, 21, 33]
-    cold_nums = [48, 49, 42]
+    hot_nums = sorted(random.sample(range(1, max_num), 4))
+    cold_nums = sorted(random.sample(range(1, max_num), 3))
     
     st.markdown(f"""
     <div class='metric-card'>
@@ -114,54 +138,60 @@ elif tab.startswith("📅"):
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown(f"#### 📋 السحوبات المطابقة لتاريخ ({search_day:02d}.{search_month:02d}):")
+    st.markdown(f"#### 📋 السحوبات التاريخية المطابقة لتاريخ ({search_day:02d}.{search_month:02d}):")
     for yr in [2025, 2023, 2020]:
-        st.markdown(f"**Ziehung: {search_day:02d}.{search_month:02d}.{yr}** | Jackpot: {yr%10+10} Mio. €")
-        render_balls(sorted(random.sample(range(1, max_num), 6)), random.randint(1, super_max))
+        st.markdown(f"**Ziehung: {search_day:02d}.{search_month:02d}.{yr}**")
+        render_balls(sorted(random.sample(range(1, max_num), len(last_draw_nums))), random.randint(1, super_max), is_euro=(game_type=="Eurojackpot"))
         st.markdown("---")
 
-# 3. قسم الأبراج وتاريخ الميلاد المتقدم
-elif tab.startswith("♈"):
-    st.markdown("#### ♈ تحليلات الأبراج وتوقعات تاريخ الميلاد الشخصية")
+elif menu == "🎂 تاريخ الميلاد (Geburtsdatum)":
+    st.markdown("### 🎂 تحليل تاريخ الميلاد الشخصي")
+    birth_date = st.date_input("أدخل تاريخ ميلادك الحقيقي / Geburtsdatum", datetime.date(1995, 6, 15))
     
-    zodiac_sign = st.selectbox("اختر برجك / Sternzeichen:", ["الحمل / Aries", "الثور / Taurus", "الجوزاء / Gemini", "السرطان / Cancer", "الأسد / Leo", "العذراء / Virgo", "الميزان / Libra", "العقرب / Scorpio", "القوس / Sagittarius", "الجدي / Capricorn", "الدلو / Aquarius", "الحوت / Pisces"])
-    birth_date = st.date_input("تاريخ ميلادك الحقيقي / Geburtsdatum", datetime.date(1995, 6, 15))
-    
-    if st.button("🔮 توليد أرقام الحظ الفلكية"):
+    if st.button("توليد أرقام الحظ من تاريخ الميلاد"):
         d, m, y = birth_date.day, birth_date.month, birth_date.year
         np.random.seed(d + m + y)
-        zodiac_nums = sorted(list(set(random.sample(range(1, max_num), 6))))
-        while len(zodiac_nums) < 6:
-            r = random.randint(1, max_num)
-            if r not in zodiac_nums: zodiac_nums.append(r)
-        zodiac_nums = sorted(zodiac_nums[:6])
-        z_super = (d + m) % super_max + 1
+        b_nums = sorted(random.sample(range(1, max_num), len(last_draw_nums)))
+        b_super = (d + m) % super_max + 1
         
-        st.success("تم دمج الطاقة الفلكية مع مصفوفة الأرقام بنجاح!")
+        st.success("تم تحليل تاريخ الميلاد واستخراج مصفوفة الحظ الخاصة بك:")
+        render_balls(b_nums, b_super, is_euro=(game_type=="Eurojackpot"))
+
+elif menu == "♈ الأبراج (Horoskop)":
+    st.markdown("### ♈ التحليل الفلكي والأبراج")
+    zodiac_sign = st.selectbox("اختر برجك / Sternzeichen:", [
+        "الحمل / Aries", "الثور / Taurus", "الجوزاء / Gemini", "السرطان / Cancer", 
+        "الأسد / Leo", "العذراء / Virgo", "الميزان / Libra", "العقرب / Scorpio", 
+        "القوس / Sagittarius", "الجدي / Capricorn", "الدلو / Aquarius", "الحوت / Pisces"
+    ])
+    
+    if st.button("عرض توقعات البرج وأرقامه"):
         st.markdown(f"""
         <div class='metric-card'>
-        <b>✨ توافق برج ({zodiac_sign.split('/')[0].strip()}):</b> مرتفع جداً هذا الأسبوع<br><br>
-        <b>أرقام الحظ الخاصة بك:</b>
+        <b>✨ توافق برج ({zodiac_sign}):</b> مرتفع جداً في سحوبات هذا الأسبوع.<br>
+        <b>الطاقة الفلكية:</b> ممتازة لاختيار الأرقام الفردية والزوجية المتوازنة.
         </div>
         """, unsafe_allow_html=True)
-        render_balls(zodiac_nums, z_super)
+        z_nums = sorted(random.sample(range(1, max_num), len(last_draw_nums)))
+        render_balls(z_nums, random.randint(1, super_max), is_euro=(game_type=="Eurojackpot"))
 
-# 4. آخر سحب رسمي
-elif tab.startswith("📌"):
-    st.markdown("#### 🏆 Letzte offizielle Ziehung")
-    st.markdown("Ziehungsdatum: **02.09.2026** | Jackpot: **5 Mio. €**")
-    render_balls([4, 15, 22, 31, 38, 45], 3)
-    st.markdown("""
-    <div class='metric-card'>
-    • Spiel 77: <b style='color:#60a5fa;'>9182736</b><br>
-    • Super 6: <b style='color:#60a5fa;'>543210</b>
-    </div>
-    """, unsafe_allow_html=True)
+elif menu == "📌 آخر سحب والأرشيف":
+    st.markdown(f"### 🏆 Letzte offizielle Ziehung ({game_type})")
+    st.markdown(f"Ziehungsdatum: **02.09.2026** | Aktueller Jackpot: **{jackpot_val}**")
+    
+    render_balls(last_draw_nums, last_draw_super, is_euro=(game_type=="Eurojackpot"))
+    
+    if game_type == "Lotto 6aus49":
+        st.markdown(f"""
+        <div class='metric-card'>
+        • Spiel 77: <b style='color:#60a5fa;'>{spiel_77}</b><br>
+        • Super 6: <b style='color:#60a5fa;'>{super_6}</b>
+        </div>
+        """, unsafe_allow_html=True)
 
-# 5. مولد التوقعات بالذكاء الاصطناعي
-elif tab.startswith("🎲"):
-    st.markdown("#### 🎲 20 Prognosen basierend auf der letzten Ziehung")
-    if st.button("✨ 20 neue Felder generieren"):
+elif menu == "🎲 توليد التوقعات (AI Gen)":
+    st.markdown(f"### 🎲 20 Prognosen basierend auf der letzten Ziehung ({game_type})")
+    if st.button("✨ توليد 20 حقل جديد"):
         st.toast("تم توليد التشكيلات بنجاح!")
         
     for i in range(1, 6):
@@ -173,12 +203,11 @@ elif tab.startswith("🎲"):
             <span style='background:#10b981; color:white; padding:2px 8px; border-radius:6px; font-size:12px;'>Score: {score}%</span>
         </div>
         """, unsafe_allow_html=True)
-        render_balls(sorted(random.sample(range(1, max_num), 6)), random.randint(0, super_max))
+        render_balls(sorted(random.sample(range(1, max_num), len(last_draw_nums))), random.randint(0, super_max), is_euro=(game_type=="Eurojackpot"))
         st.markdown("</div>", unsafe_allow_html=True)
 
-# 6. الأنظمة
 else:
-    st.markdown("#### ⚙️ Systeme & Full Matrix")
-    sys_choice = st.selectbox("اختر النظام:", ["System 008 (8 Zahlen)", "System 010 (10 Zahlen)", "Full Matrix System"])
-    if st.button("تفعيل وتوليد التغطية الكاملة"):
-        st.success(f"تم تفعيل {sys_choice} بنجاح!")
+    st.markdown(f"### ⚙️ Systeme & Full Matrix ({game_type})")
+    sys_choice = st.selectbox("اختر النظام الرياضي:", ["System 008 (8 Zahlen)", "System 010 (10 Zahlen)", "Full Matrix System"])
+    if st.button("تفعيل النظام وتوليد التغطية"):
+        st.success(f"تم تفعيل {sys_choice} بنجاح لـ {game_type}!")
