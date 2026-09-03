@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 import random
 
-# 1. إعدادات الصفحة والتصميم
+# 1. إعدادات الصفحة والتصميم الفاخر
 st.set_page_config(
     page_title="LOTTO MATRIX PRO", 
     page_icon="🌟", 
@@ -68,17 +68,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. القائمة الجانبية لإدارة الملفات
+# 2. القائمة الجانبية وإدارة الملفات
 st.sidebar.markdown("### 🌟 LOTTO MATRIX PRO")
 st.sidebar.markdown("---")
 
 game_type = st.sidebar.radio("🎯 اختر اللعبة / Game:", ["Lotto 6aus49", "Eurojackpot"])
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("📂 **إدارة قواعد البيانات (رفع الملفات)**")
+st.sidebar.markdown("📂 **رفع ملفات الأرشيف (Excel أو CSV)**")
 
 uploaded_files = st.sidebar.file_uploader(
-    "ارفع ملفات السحوبات (CSV أو Excel)", 
+    "ارفع ملفات السحوبات", 
     type=["csv", "xlsx", "xls"], 
     accept_multiple_files=True
 )
@@ -86,17 +86,17 @@ uploaded_files = st.sidebar.file_uploader(
 st.sidebar.markdown("---")
 menu = st.sidebar.radio("⚡ التنقل السريع:", [
     "📌 آخر سحب والأرشيف",
-    "📅 البحث بالتاريخ (نفس اليوم والشهر)", 
+    "📅 البحث بالتاريخ والتوليد الذكي", 
     "🎲 توليد أرقام السحب القادم",
     "🎂 تاريخ الميلاد", 
     "♈ الأبراج", 
     "⚙️ الأنظمة الرياضية"
 ])
 
-# دالة قراءة الملفات المرفوعة
+# دالة ذكية وشاملة لقراءة ملفات Excel (بكل الأوراق) و CSV
 @st.cache_data
-def load_all_data(files):
-    dfs = []
+def load_all_archive_data(files):
+    all_rows = []
     if files:
         for file in files:
             try:
@@ -107,19 +107,21 @@ def load_all_data(files):
                     except UnicodeDecodeError:
                         file.seek(0)
                         temp_df = pd.read_csv(file, encoding='latin-1', on_bad_lines='skip')
-                    dfs.append(temp_df)
+                    for _, row in temp_df.iterrows():
+                        all_rows.append(row.values)
                 else:
                     excel_file = pd.ExcelFile(file, engine='openpyxl')
                     for sheet_name in excel_file.sheet_names:
                         sheet_df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
-                        dfs.append(sheet_df)
+                        for _, row in sheet_df.iterrows():
+                            all_rows.append(row.values)
             except Exception as e:
                 st.sidebar.error(f"خطأ في قراءة {file.name}: {e}")
-        if dfs:
-            return pd.concat(dfs, ignore_index=True)
+        if all_rows:
+            return pd.DataFrame(all_rows)
     return pd.DataFrame()
 
-df = load_all_data(uploaded_files)
+df = load_all_archive_data(uploaded_files)
 
 def render_balls_pro(nums, super_nums, is_euro=False):
     html = "<div class='ball-container'>"
@@ -134,108 +136,142 @@ def render_balls_pro(nums, super_nums, is_euro=False):
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
 
-# استخراج مستقل وخاص بكل لعبة حسب قوانينها الدقيقة
-def extract_row_data(row, is_euro_game):
+# استخراج التاريخ والأرقام من أي صف في الأرشيف بدقة فائقة
+def extract_row_data(row_values, is_euro_game):
+    date_obj = None
     date_str = "N/A"
     int_vals = []
     
-    for val in row.values:
+    for val in row_values:
         if pd.notna(val):
-            val_str = str(val).strip()
-            if ("-" in val_str or "." in val_str) and len(val_str) >= 8 and any(char.isdigit() for char in val_str):
-                if date_str == "N/A":
-                    date_str = val_str[:10]
-            try:
-                iv = int(float(val_str))
-                if 1 <= iv <= 50:
-                    int_vals.append(iv)
-            except (ValueError, TypeError):
-                continue
+            # فحص إذا كانت الخيمة تمثل تاريخاً
+            if isinstance(val, (datetime.date, datetime.datetime)):
+                date_obj = val
+                date_str = val.strftime('%Y-%m-%d')
+            else:
+                val_str = str(val).strip()
+                # البحث عن تاريخ مكتوب كنص
+                if ("-" in val_str or "." in val_str) and len(val_str) >= 8 and any(c.isdigit() for c in val_str):
+                    try:
+                        parsed = pd.to_datetime(val_str, errors='coerce')
+                        if pd.notna(parsed):
+                            date_obj = parsed.date()
+                            date_str = date_obj.strftime('%Y-%m-%d')
+                    except:
+                        pass
                 
+                # استخراج الأرقام المحتملة للسحب
+                try:
+                    iv = int(float(val_str))
+                    max_num_limit = 50 if is_euro_game else 49
+                    if 1 <= iv <= max_num_limit:
+                        int_vals.append(iv)
+                except:
+                    continue
+                    
     valid_nums = []
     for iv in int_vals:
         if iv not in valid_nums:
             valid_nums.append(iv)
             
     if is_euro_game:
-        # يوروجاكبوت: 5 أرقام رئيسية + رقمان يورو
         nums = valid_nums[:5] if len(valid_nums) >= 5 else [3, 12, 23, 35, 43]
         super_nums = valid_nums[5:7] if len(valid_nums) >= 7 else [3, 7]
     else:
-        # لوتو 6aus49: 6 أرقام رئيسية + رقم خارجي واحد
         nums = valid_nums[:6] if len(valid_nums) >= 6 else [5, 12, 23, 34, 42, 48]
         super_nums = valid_nums[6] if len(valid_nums) >= 7 else 3
 
-    return date_str, nums, super_nums
+    return date_obj, date_str, nums, super_nums
 
 is_euro_mode = (game_type == "Eurojackpot")
 
-# 3. واجهة الأقسام
+# 3. محتوى الأقسام
 if menu == "📌 آخر سحب والأرشيف":
     st.markdown(f"### 🏆 أحدث السحوبات الرسمية - {game_type}")
     if not df.empty:
-        valid_rows = []
+        valid_records = []
         for _, row in df.iterrows():
-            d_str, _, _ = extract_row_data(row, is_euro_mode)
-            if d_str != "N/A":
-                valid_rows.append(row)
+            d_obj, d_str, nums, super_nums = extract_row_data(row.values, is_euro_mode)
+            if d_obj is not None:
+                valid_records.append((d_obj, d_str, nums, super_nums, row.values))
         
-        if valid_rows:
-            # عرض أحدث سحب (أول سحب تم العثور عليه في الأرشيف العلوي)
-            latest = valid_rows[0]
-            date_str, nums, super_nums = extract_row_data(latest, is_euro_mode)
+        if valid_records:
+            # ترتيب تنازلي للحصول على أحدث سحب في القمة
+            valid_records.sort(key=lambda x: x[0], reverse=True)
+            latest = valid_records[0]
             st.markdown(f"""
             <div class='pro-card'>
-                <span style='color: #a855f7; font-weight: bold;'>📅 تاريخ السحب: {date_str}</span>
+                <span style='color: #a855f7; font-weight: bold;'>📅 تاريخ أحدث سحب: {latest[1]}</span>
             """, unsafe_allow_html=True)
-            render_balls_pro(nums, super_nums, is_euro=is_euro_mode)
+            render_balls_pro(latest[2], latest[3], is_euro=is_euro_mode)
             st.markdown("</div>", unsafe_allow_html=True)
         else:
-            st.warning("يرجى التأكد من رفع ملف الأرشيف الصحيح.")
+            st.warning("لم يتم العثور على تواريخ صالحة في الملفات المرفوعة.")
     else:
         st.info("الرجاء رفع ملفات الأرشيف من القائمة الجانبية.")
     
     st.markdown("#### 📚 أرشيف السحوبات الكامل:")
     if not df.empty:
-        st.dataframe(df.dropna(how='all'), use_container_width=True)
+        st.dataframe(df.dropna(how='all').head(100), use_container_width=True)
 
-elif menu == "📅 البحث بالتاريخ (نفس اليوم والشهر)":
-    st.markdown(f"### 📅 البحث عن السحوبات التي حدثت في نفس اليوم والشهر ({game_type})")
+elif menu == "📅 البحث بالتاريخ والتوليد الذكي":
+    st.markdown(f"### 📅 البحث التاريخي والتوليد الذكي المبني على النتائج ({game_type})")
+    
     col1, col2 = st.columns(2)
     with col1:
         search_day = st.number_input("اليوم (DD)", 1, 31, 5)
     with col2:
         search_month = st.number_input("الشهر (MM)", 1, 12, 9)
         
-    st.markdown(f"#### 🔍 نتائج مطابقة اليوم ({search_day:02d}.{search_month:02d}) في الأرشيف:")
+    st.markdown(f"#### 🔍 نتائج السحوبات السابقة في نفس اليوم والشهر ({search_day:02d}.{search_month:02d}):")
     
-    matched_count = 0
+    matched_records = []
     if not df.empty:
-        try:
-            for _, row in df.iterrows():
-                row_text = " ".join([str(v) for v in row.values if pd.notna(v)])
-                day_str, day_single = f"{search_day:02d}", f"{search_day}"
-                month_str, month_single = f"{search_month:02d}", f"{search_month}"
+        for _, row in df.iterrows():
+            d_obj, d_str, nums, super_nums, _ = extract_row_data(row.values, is_euro_mode)
+            if d_obj is not None:
+                if d_obj.day == search_day and d_obj.month == search_month:
+                    matched_records.append((d_obj, d_str, nums, super_nums))
+        
+        if matched_records:
+            # ترتيب تنازلي للأحدث
+            matched_records.sort(key=lambda x: x[0], reverse=True)
+            
+            all_historical_nums = []
+            for item in matched_records:
+                st.markdown(f"<div class='pro-card'><b>📅 تاريخ السحب: {item[1]}</b>", unsafe_allow_html=True)
+                render_balls_pro(item[2], item[3], is_euro=is_euro_mode)
+                st.markdown("</div>", unsafe_allow_html=True)
+                all_historical_nums.extend(item[2])
+            
+            # التوليد الذكي المبني على الأرشيف المطابق
+            st.markdown("---")
+            st.markdown("### 🌟 التشكيلة الذكية المقترحة (مبنية على سحوبات نفس التاريخ تاريخياً):")
+            if all_historical_nums:
+                from collections import Counter
+                freq = Counter(all_historical_nums)
+                # اختيار أكثر الأرقام تكراراً في هذا التاريخ عبر السنوات
+                common_nums = [num for num, _ in freq.most_common(10)]
                 
-                if (f"{day_str}.{month_str}" in row_text or 
-                    f"{day_single}.{month_str}" in row_text or 
-                    f"{day_str}/{month_str}" in row_text or
-                    f"-{month_str}-{day_str}" in row_text or
-                    f".{month_str}.{day_str}" in row_text or
-                    f"{month_str}-{day_str}" in row_text):
-                    
-                    date_str, nums, super_nums = extract_row_data(row, is_euro_mode)
-                    min_req = 5 if is_euro_mode else 6
-                    if date_str != "N/A" and len(nums) >= min_req:
-                        matched_count += 1
-                        st.markdown(f"<div class='pro-card'><b>📅 تاريخ السحب: {date_str}</b>", unsafe_allow_html=True)
-                        render_balls_pro(nums, super_nums, is_euro=is_euro_mode)
-                        st.markdown("</div>", unsafe_allow_html=True)
-                        
-            if matched_count == 0:
-                st.warning(f"لا توجد سحوبات مطابقة لتاريخ ({search_day:02d}.{search_month:02d}) في الأرشيف المرفوع.")
-        except Exception as e:
-            st.error(f"خطأ أثناء البحث: {e}")
+                max_limit = 50 if is_euro_mode else 49
+                count = 5 if is_euro_mode else 6
+                
+                if len(common_nums) >= count:
+                    smart_selection = sorted(common_nums[:count])
+                else:
+                    remaining = [n for n in range(1, max_limit + 1) if n not in common_nums]
+                    smart_selection = sorted(common_nums + random.sample(remaining, count - len(common_nums)))
+                
+                smart_super = [2, 8] if is_euro_mode else 5
+                
+                st.markdown("""
+                <div class='pro-card' style='border: 2px solid #a855f7;'>
+                    <div style='color: #a855f7; font-weight: bold; margin-bottom: 8px;'>✨ تشكيلة التحليل الإحصائي المتقدم:</div>
+                """, unsafe_allow_html=True)
+                render_balls_pro(smart_selection, smart_super, is_euro=is_euro_mode)
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.warning(f"لا توجد سحوبات سابقة مسجلة في تاريخ ({search_day:02d}.{search_month:02d}) ضمن الملفات المرفوعة.")
     else:
         st.info("الرجاء رفع ملفات الأرشيف من القائمة الجانبية أولاً.")
 
@@ -276,7 +312,7 @@ elif menu == "♈ الأبراج":
     st.markdown("### ♈ التحليل الفلكي والأبراج الذكية")
     sign = st.selectbox("اختر برجك الفلكي:", ["الحمل", "الثور", "الجوزاء", "السرطان", "الأسد", "العذراء", "الميزان", "العقرب", "القوس", "الجدي", "الدلو", "الحوت"])
     if st.button("🔮 حساب التوافق والطاقة الفلكية"):
-        st.markdown(f"<div class='pro-card'><b>✨ برج {sign}:</b> طاقة الأرقام الفردية مرتفعة لديك.", unsafe_allow_html=True)
+        st.markdown(f"<div class='pro-card<b>✨ برج {sign}:</b> طاقة الأرقام الفردية مرتفعة لديك.", unsafe_allow_html=True)
         max_limit = 50 if is_euro_mode else 49
         count = 5 if is_euro_mode else 6
         z_nums = sorted(random.sample(range(1, max_limit + 1), count))
