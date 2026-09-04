@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 import random
-import requests
 
 # إعداد الصفحة
 st.set_page_config(page_title="Lotto & Eurojackpot Pro", page_icon="🎰", layout="wide")
@@ -120,7 +119,7 @@ with tab1:
             
     st.markdown("---")
     
-    # توليد الأرقام عبر الأبراج لـ Lotto (6 أرقام من 49 + رقم إضافي)
+    # توليد الأرقام عبر الأبراج لـ Lotto
     st.subheader(t["zodiac_title"])
     zodiac_list = list(t["zodiacs"].keys())
     selected_zodiac = st.selectbox(t["select_zodiac"], zodiac_list, key="lotto_zodiac")
@@ -137,10 +136,8 @@ with tab1:
 
     st.markdown("---")
     st.subheader(t["latest_draws"])
-    # محاكاة جلب أحدث السحوبات تلقائياً
-    st.write("🔹 **آخر سحب تم رصده تلقائياً:** الأربعاء / السبت (تحديث مباشر من المصدر الرسمي)")
+    st.write("🔹 **آخر سحب تم رصده تلقائياً:** الأربعاء / السبت")
     st.code("الأرقام الفائزة الأخيرة: 5 - 12 - 23 - 34 - 41 - 48 | Superzahl: 7")
-
 
 with tab2:
     st.header("🇪🇺 Eurojackpot - Management & Generator")
@@ -160,7 +157,7 @@ with tab2:
             
     st.markdown("---")
     
-    # توليد الأرقام عبر الأبراج لـ Eurojackpot (5 من 50 + 2 من 12)
+    # توليد الأرقام عبر الأبراج لـ Eurojackpot
     st.subheader(t["zodiac_title"] + " (Eurojackpot)")
     selected_euro_zodiac = st.selectbox(t["select_zodiac"], zodiac_list, key="euro_zodiac")
     euro_zodiac_icon = t["zodiacs"][selected_euro_zodiac]
@@ -168,7 +165,7 @@ with tab2:
     if st.button(t["generate_btn"] + " (Eurojackpot)", key="btn_euro"):
         random.seed(str(selected_euro_zodiac) + str(now.month))
         euro_numbers = sorted(random.sample(range(1, 51), 5))
-euro_extras = sorted(random.sample(range(1, 13), 2))
+        euro_extras = sorted(random.sample(range(1, 13), 2))
         st.balloons()
         st.success(f"### {euro_zodiac_icon} برج {selected_euro_zodiac}")
         st.markdown(f"**الأرقام الأساسية (5/50):** `{' - '.join(map(str, euro_numbers))}`")
@@ -176,5 +173,5 @@ euro_extras = sorted(random.sample(range(1, 13), 2))
 
     st.markdown("---")
     st.subheader(t["latest_draws"])
-    st.write("🔹 **آخر سحب تم رصده تلقائياً:** الثلاثاء / الجمعة (يتم التحديث المباشر أسبوعياً)")
+    st.write("🔹 **آخر سحب تم رصده تلقائياً:** الثلاثاء / الجمعة")
     st.code("الأرقام الفائزة الأخيرة: 8 - 14 - 22 - 39 - 45 | أرقام النجوم: 3 - 11")
