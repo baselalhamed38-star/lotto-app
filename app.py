@@ -1,191 +1,135 @@
+import streamlit as st
 import pandas as pd
 import datetime as dt
 import random
 from collections import Counter
 
-
 # =========================================================
-# تحويل أي قيمة إلى تاريخ
-# =========================================================
-
-def get_date_from_value(value):
-    if pd.isna(value):
-        return None
-
-    # تاريخ جاهز من Excel أو pandas
-    if isinstance(value, (dt.datetime, dt.date, pd.Timestamp)):
-        return pd.Timestamp(value).date()
-
-    text = str(value).strip()
-
-    if not text:
-        return None
-
-    # معالجة تاريخ Excel الرقمي
-    # أرقام Excel للتاريخ غالباً تكون بين 30000 و60000
-    try:
-        numeric_value = float(text)
-
-        if 30000 <= numeric_value <= 60000:
-            excel_date = pd.Timestamp(
-                "1899-12-30"
-            ) + pd.to_timedelta(
-                numeric_value,
-                unit="D"
-            )
-
-            return excel_date.date()
-    except Exception:
-        pass
-
-    # منع اعتبار الرقم العادي تاريخاً
-    if text.isdigit():
-        return None
-
-    # معالجة صيغ التاريخ المختلفة
-    parsed = pd.to_datetime(
-        text,
-        errors="coerce",
-        dayfirst=True
-    )
-
-    if pd.notna(parsed):
-        return parsed.date()
-
-    return None
-
-
-# =========================================================
-# تحويل القيمة إلى رقم
+# إعداد الصفحة
 # =========================================================
 
-def get_number_from_value(value):
-    if pd.isna(value):
-        return None
+st.set_page_config(
+    page_title="LOTTO HISTORY ANALYZER",
+    page_icon="🎱",
+    layout="wide"
+)
 
-    try:
-        text = str(value).strip()
-        number = float(text.replace(",", "."))
+st.markdown("""
+<style>
+.stApp {
+    background: radial-gradient(circle at top, #111827 0%, #030712 100%);
+    color: #f9fafb;
+}
 
-        if number.is_integer():
-            return int(number)
+.block-container {
+    max-width: 1250px;
+    padding-top: 2rem;
+}
 
-    except Exception:
-        return None
+.card {
+    background: rgba(31, 41, 55, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+}
 
-    return None
+.ball-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
 
+.ball {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    box-shadow: 0 3px 10px rgba(0,0,0,.35);
+}
 
-# =========================================================
-# استخراج السحب من صف واحد
-# =========================================================
+.main-ball {
+    background: linear-gradient(135deg, #ffffff, #cbd5e1);
+    color: #111827;
+}
 
-def extract_draw_from_row(row_values, euro_game=False):
-    date_value = None
-    numbers = []
+.super-ball {
+    background: linear-gradient(135deg, #ef4444, #991b1b);
+    color: white;
+}
 
-    for value in row_values:
-        found_date = get_date_from_value(value)
+.euro-ball {
+    background: linear-gradient(135deg, #f59e0b, #b45309);
+    color: white;
+}
 
-        if found_date is not None:
-            date_value = found_date
-            continue
-
-        number = get_number_from_value(value)
-
-        if number is not None:
-            numbers.append(number)
-
-    if date_value is None:
-        return None
-
-    # إزالة القيم غير المفيدة في بداية الصف
-    # ثم نأخذ آخر أرقام الصف لأنها غالباً أرقام السحب
-    if euro_game:
-        # Eurojackpot يحتاج 5 أرقام رئيسية + 2 Euro
-        valid_numbers = [
-            n for n in numbers
-            if 1 <= n <= 50
-        ]
-
-        if len(valid_numbers) < 7:
-            return None
-
-        last_seven = valid_numbers[-7:]
-
-        main_numbers = last_seven[:5]
-        euro_numbers = last_seven[5:]
-
-        # التأكد أن أرقام Euro صحيحة
-        if not all(1 <= n <= 12 for n in euro_numbers):
-            # محاولة بديلة من كل الأرقام
-            possible_euro = [
-                n for n in numbers
-                if 1 <= n <= 12
-            ]
-
-            if len(possible_euro) >= 2:
-                euro_numbers = possible_euro[-2:]
-
-        if len(main_numbers) != 5 or len(euro_numbers) != 2:
-            return None
-
-        return {
-            "date": date_value,
-            "main": sorted(main_numbers),
-            "extra": sorted(euro_numbers)
-        }
-
-    else:
-        # Lotto 6aus49 يحتاج 6 أرقام + Superzahl
-        valid_main = [
-            n for n in numbers
-            if 1 <= n <= 49
-        ]
-
-        if len(valid_main) < 6:
-            return None
-
-        # آخر 6 أرقام تعتبر أرقام السحب الرئيسية
-        main_numbers = valid_main[-6:]
-
-        # نبحث عن Superzahl بعد أرقام السحب
-        super_number = None
-
-        if numbers:
-            possible_super = [
-                n for n in numbers
-                if 0 <= n <= 9
-            ]
-
-            if possible_super:
-                super_number = possible_super[-1]
-
-        if super_number is None:
-            super_number = 0
-
-        return {
-            "date": date_value,
-            "main": sorted(main_numbers),
-            "extra": super_number
-        }
-
+.warning-box {
+    background: rgba(127, 29, 29, .35);
+    border: 1px solid #ef4444;
+    padding: 15px;
+    border-radius: 12px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
-# قراءة كل الملفات وكل أوراق Excel
+# إعدادات اللعبة
 # =========================================================
 
-@st.cache_data(show_spinner=False)
-def read_all_uploaded_files(uploaded_files):
+st.sidebar.title("🎱 LOTTO HISTORY ANALYZER")
+
+game_type = st.sidebar.radio(
+    "اختر اللعبة:",
+    ["Lotto 6aus49", "Eurojackpot"]
+)
+
+is_euro = game_type == "Eurojackpot"
+
+st.sidebar.markdown("---")
+
+uploaded_files = st.sidebar.file_uploader(
+    "ارفع ملفات CSV أو Excel",
+    type=["csv", "xlsx", "xls"],
+    accept_multiple_files=True
+)
+
+st.sidebar.markdown("---")
+
+page = st.sidebar.radio(
+    "القسم:",
+    [
+        "البحث حسب اليوم والشهر",
+        "كل السحوبات",
+        "توليد اقتراحات",
+        "فحص الملف"
+    ]
+)
+
+# =========================================================
+# قراءة الملفات
+# =========================================================
+
+def read_uploaded_files(files):
+    """
+    يقرأ كل ملفات CSV وExcel وكل أوراق Excel.
+    لا يوجد حد لعدد الصفوف أو السحوبات.
+    """
+
     all_rows = []
+    file_information = []
 
-    if not uploaded_files:
-        return pd.DataFrame()
+    if not files:
+        return pd.DataFrame(), file_information
 
-    for uploaded_file in uploaded_files:
+    for uploaded_file in files:
+        filename = uploaded_file.name.lower()
+
         try:
-            filename = uploaded_file.name.lower()
-
             if filename.endswith(".csv"):
                 uploaded_file.seek(0)
 
@@ -210,11 +154,25 @@ def read_all_uploaded_files(uploaded_files):
                         on_bad_lines="skip"
                     )
 
-                for _, row in dataframe.iterrows():
-                    all_rows.append(row.tolist())
+                before = len(all_rows)
 
-            else:
+                for _, row in dataframe.iterrows():
+                    all_rows.append({
+                        "source_file": uploaded_file.name,
+                        "source_sheet": "",
+                        "values": row.tolist()
+                    })
+
+                file_information.append({
+                    "الملف": uploaded_file.name,
+                    "النوع": "CSV",
+                    "الأوراق": 1,
+                    "عدد الصفوف": len(all_rows) - before
+                })
+
+            elif filename.endswith(".xlsx") or filename.endswith(".xls"):
                 excel_file = pd.ExcelFile(uploaded_file)
+                before = len(all_rows)
 
                 for sheet_name in excel_file.sheet_names:
                     dataframe = pd.read_excel(
@@ -224,39 +182,238 @@ def read_all_uploaded_files(uploaded_files):
                     )
 
                     for _, row in dataframe.iterrows():
-                        all_rows.append(row.tolist())
+                        all_rows.append({
+                            "source_file": uploaded_file.name,
+                            "source_sheet": sheet_name,
+                            "values": row.tolist()
+                        })
+
+                file_information.append({
+                    "الملف": uploaded_file.name,
+                    "النوع": "Excel",
+                    "الأوراق": len(excel_file.sheet_names),
+                    "عدد الصفوف": len(all_rows) - before
+                })
 
         except Exception as error:
             st.error(
-                f"خطأ في قراءة الملف {uploaded_file.name}: {error}"
+                f"تعذر قراءة الملف {uploaded_file.name}: {error}"
             )
 
     if not all_rows:
-        return pd.DataFrame()
+        return pd.DataFrame(), file_information
 
-    return pd.DataFrame(all_rows)
+    return pd.DataFrame(all_rows), file_information
+
+
+raw_df, file_information = read_uploaded_files(uploaded_files)
+
+# =========================================================
+# تحويل القيم إلى تاريخ
+# =========================================================
+
+def parse_date(value):
+    if pd.isna(value):
+        return None
+
+    if isinstance(value, (dt.date, dt.datetime, pd.Timestamp)):
+        return pd.Timestamp(value).date()
+
+    text = str(value).strip()
+
+    if not text:
+        return None
+
+    # تاريخ Excel، مثل 45200
+    try:
+        numeric = float(text)
+
+        if 30000 <= numeric <= 60000:
+            excel_date = (
+                pd.Timestamp("1899-12-30")
+                + pd.to_timedelta(numeric, unit="D")
+            )
+
+            return excel_date.date()
+
+    except Exception:
+        pass
+
+    # الأرقام العادية ليست تواريخ
+    if text.isdigit():
+        return None
+
+    # يدعم 05.09.2020 و05/09/2020 و2020-09-05
+    parsed = pd.to_datetime(
+        text,
+        errors="coerce",
+        dayfirst=True
+    )
+
+    if pd.notna(parsed):
+        return parsed.date()
+
+    return None
 
 
 # =========================================================
-# تحويل البيانات إلى سحوبات مفهومة
+# تحويل القيم إلى أرقام
 # =========================================================
 
-def build_draws(dataframe, euro_game=False):
+def parse_number(value):
+    if pd.isna(value):
+        return None
+
+    try:
+        text = str(value).strip()
+        text = text.replace(",", ".")
+
+        number = float(text)
+
+        if number.is_integer():
+            return int(number)
+
+    except Exception:
+        return None
+
+    return None
+
+
+# =========================================================
+# استخراج السحب من صف
+# =========================================================
+
+def extract_draw(row_values, euro_game):
+    found_date = None
+    numbers = []
+
+    for value in row_values:
+        date_value = parse_date(value)
+
+        if date_value is not None:
+            found_date = date_value
+            continue
+
+        number = parse_number(value)
+
+        if number is not None:
+            numbers.append(number)
+
+    if found_date is None:
+        return None
+
+    # حذف التكرارات، مع المحافظة على الترتيب
+    unique_numbers = []
+
+    for number in numbers:
+        if number not in unique_numbers:
+            unique_numbers.append(number)
+
+    if euro_game:
+        """
+        Eurojackpot:
+        5 أرقام رئيسية من 1 إلى 50
+        رقمان إضافيان من 1 إلى 12
+        نأخذ آخر 7 أرقام من الصف
+        """
+
+        possible_numbers = [
+            number for number in unique_numbers
+            if 1 <= number <= 50
+        ]
+
+        if len(possible_numbers) < 7:
+            return None
+
+        last_seven = possible_numbers[-7:]
+
+        main_numbers = last_seven[:5]
+        euro_numbers = last_seven[5:]
+
+        if len(euro_numbers) != 2:
+            return None
+
+        if not all(1 <= number <= 12 for number in euro_numbers):
+            return None
+
+        return {
+            "date": found_date,
+            "main": sorted(main_numbers),
+            "extra": sorted(euro_numbers)
+        }
+
+    else:
+        """
+        Lotto 6aus49:
+        6 أرقام رئيسية من 1 إلى 49
+        رقم Superzahl من 0 إلى 9
+        """
+
+        possible_numbers = [
+            number for number in unique_numbers
+            if 1 <= number <= 49
+        ]
+
+        if len(possible_numbers) < 6:
+            return None
+
+        main_numbers = possible_numbers[-6:]
+
+        # نبحث عن Superzahl في آخر أرقام الصف
+        super_candidates = [
+            number for number in unique_numbers
+            if 0 <= number <= 9
+        ]
+
+        super_number = (
+            super_candidates[-1]
+            if super_candidates
+            else 0
+        )
+
+        return {
+            "date": found_date,
+            "main": sorted(main_numbers),
+            "extra": super_number
+        }
+
+
+# =========================================================
+# تحويل كل الصفوف إلى سحوبات
+# =========================================================
+
+def extract_all_draws(dataframe, euro_game):
     draws = []
+    invalid_rows = []
 
     if dataframe.empty:
-        return draws
+        return draws, invalid_rows
 
-    for _, row in dataframe.iterrows():
-        draw = extract_draw_from_row(
-            row.tolist(),
+    for index, row in dataframe.iterrows():
+        values = row["values"]
+
+        draw = extract_draw(
+            values,
             euro_game=euro_game
         )
 
-        if draw is not None:
+        if draw is None:
+            invalid_rows.append({
+                "رقم الصف": index + 1,
+                "الملف": row["source_file"],
+                "الورقة": row["source_sheet"],
+                "محتوى الصف": " | ".join(
+                    str(value)
+                    for value in values
+                    if not pd.isna(value)
+                )
+            })
+        else:
+            draw["file"] = row["source_file"]
+            draw["sheet"] = row["source_sheet"]
             draws.append(draw)
 
-    # إزالة التكرار
+    # إزالة السحوبات المكررة
     clean_draws = []
     seen = set()
 
@@ -276,48 +433,104 @@ def build_draws(dataframe, euro_game=False):
             seen.add(key)
             clean_draws.append(draw)
 
-    return sorted(
-        clean_draws,
-        key=lambda item: item["date"],
+    clean_draws.sort(
+        key=lambda draw: draw["date"],
         reverse=True
     )
 
+    return clean_draws, invalid_rows
+
+
+draws, invalid_rows = extract_all_draws(
+    raw_df,
+    euro_game=is_euro
+)
 
 # =========================================================
-# السحوبات بنفس اليوم والشهر
+# عرض الكرات
 # =========================================================
 
-def find_same_day_month(draws, selected_day, selected_month):
+def render_balls(main_numbers, extra, euro_game):
+    html = "<div class='ball-row'>"
+
+    for number in main_numbers:
+        html += (
+            f"<div class='ball main-ball'>{number}</div>"
+        )
+
+    if euro_game:
+        for number in extra:
+            html += (
+                f"<div class='ball euro-ball'>{number}</div>"
+            )
+    else:
+        html += (
+            f"<div class='ball super-ball'>{extra}</div>"
+        )
+
+    html += "</div>"
+
+    st.markdown(
+        html,
+        unsafe_allow_html=True
+    )
+
+
+def render_draw(draw):
+    st.markdown(
+        f"""
+        <div class="card">
+            <b>📅 {draw["date"].strftime("%d.%m.%Y")}</b>
+            <br>
+            <small>
+                الملف: {draw["file"]}
+                {(" | الورقة: " + draw["sheet"])
+                if draw["sheet"] else ""}
+            </small>
+        """,
+        unsafe_allow_html=True
+    )
+
+    render_balls(
+        draw["main"],
+        draw["extra"],
+        euro_game=is_euro
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# تحليل السحوبات
+# =========================================================
+
+def get_matching_draws(day, month):
     return [
         draw for draw in draws
-        if draw["date"].day == selected_day
-        and draw["date"].month == selected_month
+        if draw["date"].day == day
+        and draw["date"].month == month
     ]
 
 
-# =========================================================
-# تحليل السحوبات المطابقة
-# =========================================================
-
-def analyze_matching_draws(matching_draws, euro_game=False):
+def create_prediction(matching_draws, euro_game):
     if not matching_draws:
         return None
 
-    main_counter = Counter()
+    main_frequency = Counter()
 
     for draw in matching_draws:
-        main_counter.update(draw["main"])
+        main_frequency.update(draw["main"])
 
     if euro_game:
-        extra_counter = Counter()
+        extra_frequency = Counter()
 
         for draw in matching_draws:
-            extra_counter.update(draw["extra"])
+            extra_frequency.update(draw["extra"])
 
         ranked_main = sorted(
             range(1, 51),
             key=lambda number: (
-                main_counter[number],
+                main_frequency[number],
                 random.random()
             ),
             reverse=True
@@ -326,48 +539,352 @@ def analyze_matching_draws(matching_draws, euro_game=False):
         ranked_extra = sorted(
             range(1, 13),
             key=lambda number: (
-                extra_counter[number],
+                extra_frequency[number],
                 random.random()
             ),
             reverse=True
         )
 
-        prediction = {
+        return {
             "main": sorted(ranked_main[:5]),
             "extra": sorted(ranked_extra[:2]),
-            "main_frequency": main_counter,
-            "extra_frequency": extra_counter
+            "main_frequency": main_frequency,
+            "extra_frequency": extra_frequency
         }
+
+    extra_frequency = Counter()
+
+    for draw in matching_draws:
+        extra_frequency.update([draw["extra"]])
+
+    ranked_main = sorted(
+        range(1, 50),
+        key=lambda number: (
+            main_frequency[number],
+            random.random()
+        ),
+        reverse=True
+    )
+
+    ranked_extra = sorted(
+        range(0, 10),
+        key=lambda number: (
+            extra_frequency[number],
+            random.random()
+        ),
+        reverse=True
+    )
+
+    return {
+        "main": sorted(ranked_main[:6]),
+        "extra": ranked_extra[0],
+        "main_frequency": main_frequency,
+        "extra_frequency": extra_frequency
+    }
+
+
+# =========================================================
+# واجهة التطبيق
+# =========================================================
+
+st.title("🎱 LOTTO HISTORY ANALYZER")
+st.write(
+    "ارفع جميع ملفات السحوبات، ثم اختر اليوم والشهر "
+    "لتحليل كل السنوات المطابقة."
+)
+
+if not uploaded_files:
+    st.info(
+        "ابدأ برفع ملفات CSV أو Excel من القائمة الجانبية."
+    )
+else:
+    st.success(
+        f"تم تحميل {len(uploaded_files)} ملف، "
+        f"وتم التعرف على {len(draws)} سحب."
+    )
+
+# =========================================================
+# قسم البحث حسب اليوم والشهر
+# =========================================================
+
+if page == "البحث حسب اليوم والشهر":
+
+    st.header("🔎 البحث في جميع السنوات")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selected_day = st.number_input(
+            "اليوم",
+            min_value=1,
+            max_value=31,
+            value=5
+        )
+
+    with col2:
+        selected_month = st.number_input(
+            "الشهر",
+            min_value=1,
+            max_value=12,
+            value=9
+        )
+
+    matching_draws = get_matching_draws(
+        selected_day,
+        selected_month
+    )
+
+    st.subheader(
+        f"السحوبات بتاريخ "
+        f"{selected_day:02d}.{selected_month:02d}"
+    )
+
+    if not matching_draws:
+        st.warning(
+            "لم يتم العثور على سحوبات بهذا اليوم والشهر."
+        )
+
+        st.write("عدد الصفوف المقروءة:", len(raw_df))
+        st.write("عدد السحوبات المفهومة:", len(draws))
 
     else:
-        extra_counter = Counter()
+        st.success(
+            f"تم العثور على {len(matching_draws)} سحب "
+            "من جميع السنوات."
+        )
 
+        # عرض كل السحوبات بدون head أو حد أقصى
         for draw in matching_draws:
-            extra_counter.update([draw["extra"]])
+            render_draw(draw)
 
-        ranked_main = sorted(
-            range(1, 50),
-            key=lambda number: (
-                main_counter[number],
-                random.random()
-            ),
-            reverse=True
+        st.header("📊 تحليل كل السحوبات المطابقة")
+
+        prediction = create_prediction(
+            matching_draws,
+            euro_game=is_euro
         )
 
-        ranked_extra = sorted(
-            range(0, 10),
-            key=lambda number: (
-                extra_counter[number],
-                random.random()
-            ),
-            reverse=True
+        if prediction:
+            st.markdown(
+                "<div class='card'>"
+                "<h3>🌟 التوقع الإحصائي</h3>",
+                unsafe_allow_html=True
+            )
+
+            render_balls(
+                prediction["main"],
+                prediction["extra"],
+                euro_game=is_euro
+            )
+
+            st.info(
+                "هذا اقتراح إحصائي مبني على تكرار الأرقام "
+                "في السحوبات المطابقة، وليس نتيجة مضمونة."
+            )
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.subheader("🔢 تكرار الأرقام الرئيسية")
+
+            frequency_data = []
+
+            for number, count in prediction[
+                "main_frequency"
+            ].most_common():
+
+                frequency_data.append({
+                    "الرقم": number,
+                    "مرات الظهور": count
+                })
+
+            st.dataframe(
+                pd.DataFrame(frequency_data),
+                use_container_width=True,
+                hide_index=True
+            )
+
+            st.subheader("🎯 تكرار الأرقام الإضافية")
+
+            extra_data = []
+
+            for number, count in prediction[
+                "extra_frequency"
+            ].most_common():
+
+                extra_data.append({
+                    "الرقم الإضافي": number,
+                    "مرات الظهور": count
+                })
+
+            st.dataframe(
+                pd.DataFrame(extra_data),
+                use_container_width=True,
+                hide_index=True
+            )
+
+
+# =========================================================
+# قسم كل السحوبات
+# =========================================================
+
+elif page == "كل السحوبات":
+
+    st.header("📚 كل السحوبات الموجودة في الملفات")
+
+    if not draws:
+        st.warning("لم يتم التعرف على أي سحب.")
+    else:
+        # بدون تحديد عدد، يعرض كل السجلات
+        for draw in draws:
+            render_draw(draw)
+
+
+# =========================================================
+# قسم توليد الاقتراحات
+# =========================================================
+
+elif page == "توليد اقتراحات":
+
+    st.header("🎲 توليد اقتراحات")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        selected_day = st.number_input(
+            "اليوم",
+            min_value=1,
+            max_value=31,
+            value=5,
+            key="prediction_day"
         )
 
-        prediction = {
-            "main": sorted(ranked_main[:6]),
-            "extra": ranked_extra[0],
-            "main_frequency": main_counter,
-            "extra_frequency": extra_counter
-        }
+    with col2:
+        selected_month = st.number_input(
+            "الشهر",
+            min_value=1,
+            max_value=12,
+            value=9,
+            key="prediction_month"
+        )
 
-    return prediction
+    matching_draws = get_matching_draws(
+        selected_day,
+        selected_month
+    )
+
+    if not matching_draws:
+        st.warning(
+            "لا توجد سحوبات بنفس اليوم والشهر."
+        )
+    else:
+        st.write(
+            f"سيتم التحليل اعتماداً على "
+            f"{len(matching_draws)} سحب."
+        )
+
+        if st.button("🚀 توليد الاقتراح"):
+
+            prediction = create_prediction(
+                matching_draws,
+                euro_game=is_euro
+            )
+
+            st.markdown(
+                "<div class='card'>"
+                "<h3>التشكيلة المقترحة</h3>",
+                unsafe_allow_html=True
+            )
+
+            render_balls(
+                prediction["main"],
+                prediction["extra"],
+                euro_game=is_euro
+            )
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# قسم فحص الملف
+# =========================================================
+
+elif page == "فحص الملف":
+
+    st.header("🧪 فحص الملفات")
+
+    if not uploaded_files:
+        st.info("ارفع الملفات أولاً.")
+    else:
+        st.subheader("معلومات الملفات")
+
+        if file_information:
+            st.dataframe(
+                pd.DataFrame(file_information),
+                use_container_width=True,
+                hide_index=True
+            )
+
+        st.subheader("إحصائيات القراءة")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "الملفات",
+                len(uploaded_files)
+            )
+
+        with col2:
+            st.metric(
+                "الصفوف المقروءة",
+                len(raw_df)
+            )
+
+        with col3:
+            st.metric(
+                "السحوبات المفهومة",
+                len(draws)
+            )
+
+        st.subheader("السحوبات المفهومة")
+
+        if draws:
+            preview_rows = []
+
+            for draw in draws:
+                preview_rows.append({
+                    "التاريخ": draw["date"].strftime("%d.%m.%Y"),
+                    "الأرقام": ", ".join(
+                        map(str, draw["main"])
+                    ),
+                    "الإضافي": (
+                        ", ".join(map(str, draw["extra"]))
+                        if isinstance(draw["extra"], list)
+                        else draw["extra"]
+                    ),
+                    "الملف": draw["file"],
+                    "الورقة": draw["sheet"]
+                })
+
+            st.dataframe(
+                pd.DataFrame(preview_rows),
+                use_container_width=True,
+                hide_index=True
+            )
+
+        st.subheader("الصفوف التي لم يتم فهمها")
+
+        if invalid_rows:
+            st.warning(
+                f"يوجد {len(invalid_rows)} صف لم يتم تحويله إلى سحب."
+            )
+
+            st.dataframe(
+                pd.DataFrame(invalid_rows),
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.success(
+                "تم فهم جميع الصفوف الموجودة في الملفات."
+            )
