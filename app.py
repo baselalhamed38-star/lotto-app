@@ -5,9 +5,9 @@ import os
 
 st.set_page_config(page_title="سحوبات اللوتو حسب التاريخ", page_icon="🔢", layout="centered")
 
-# دالة لتحميل البيانات مع التخزين المؤقت القياسي السريع والآمن
+# تغيير اسم الدالة لتحديث الـ Cache تماماً وإجبار Streamlit على قراءة الكود الجديد
 @st.cache_data
-def load_lotto_data():
+def load_lotto_data_fresh():
     files = [f for f in glob.glob("LOTTO*.xlsx") if "2021" not in f]
     all_draws = []
     
@@ -21,7 +21,7 @@ def load_lotto_data():
                         val = row.get('Unnamed: 1')
                         if pd.notna(val) and hasattr(val, 'year'):
                             date_obj = pd.to_datetime(val)
-                            date_str = date_obj.strftime('%m-%d') # الشهر واليوم فقط
+                            date_str = date_obj.strftime('%m-%d')
                             full_date_str = date_obj.strftime('%Y-%m-%d')
                             
                             nums = [str(int(row.get(f'Unnamed: i'))) for i in range(2, 8) if pd.notna(row.get(f'Unnamed: i'))]
@@ -43,17 +43,20 @@ def load_lotto_data():
 st.title("🔢 نظام البحث السريع في سحوبات اللوتو")
 st.write("ابحث بالتاريخ (الشهر واليوم) لاستخراج أرقام السحب من الملفات المحددة:")
 
-# تحميل البيانات المحسنة
+# تحميل البيانات الجديدة
 with st.spinner("جاري تحميل بيانات السحوبات..."):
-    df_lotto = load_lotto_data()
+    df_lotto = load_lotto_data_fresh()
 
 # حقل البحث
 query = st.text_input("أدخل التاريخ (مثال: 05-12 أو 03):", "").strip().lower()
 
 if query:
-    # استخدام طريقة آمنة تماماً للبحث لتجنب أي أخطاء
-    mask = df_lotto['date_md'].astype(str).str.lower().str.contains(query) | df_lotto['full_date'].astype(str).str.lower().str.contains(query)
-    results = df_lotto[mask]
+    # طريقة بحث آمنة جداً تتفادى أي KeyError مهما كانت الأعمدة
+    if not df_lotto.empty and 'date_md' in df_lotto.columns and 'full_date' in df_lotto.columns:
+        mask = df_lotto['date_md'].astype(str).str.lower().str.contains(query) | df_lotto['full_date'].astype(str).str.lower().str.contains(query)
+        results = df_lotto[mask]
+    else:
+        results = pd.DataFrame()
     
     st.markdown("---")
     st.subheader(f"نتائج البحث ({len(results)} سحب مطابق):")
@@ -64,6 +67,6 @@ if query:
                        f"🔢 **الأرقام:** {row['numbers']}\n\n"
                        f"📂 **الملف:** {row['file']}")
     else:
-        st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا التاريخ.")
+        st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا التاريخ أو البيانات فارغة.")
 else:
     st.info("💡 اكتب التاريخ في خانة البحث بالأعلى لعرض السحوبات المطابقة فوراً.")
