@@ -1,15 +1,13 @@
 import streamlit as st
 import pandas as pd
 import io
-import base64
 
 st.set_page_config(page_title="سحوبات اللوتو حسب التاريخ", page_icon="🔢", layout="centered")
 
 @st.cache_data
 def load_data():
-    b64_data = "''' + csv_base64 + '''"
-    decoded_bytes = base64.b64decode(b64_data)
-    return pd.read_csv(io.BytesIO(decoded_bytes))
+    raw_json = r'''%JSON_DATA%'''
+    return pd.read_json(io.StringIO(raw_json))
 
 st.title("🔢 نظام البحث في سحوبات اللوتو")
 st.write("ابحث بالتاريخ (مثال: **10-09** أو **1955-10-09**):")
@@ -26,7 +24,7 @@ else:
                df_lotto['full_date'].astype(str).str.contains(query, case=False, na=False)
         results = df_lotto[mask]
         
-        st.markdown("---")
+        st.markdown---()
         st.subheader(f"نتائج البحث ({len(results)} سحب مطابق):")
         
         if not results.empty:
