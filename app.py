@@ -51,7 +51,7 @@ with st.spinner("جاري تحميل بيانات السحوبات..."):
 query = st.text_input("أدخل التاريخ (مثال: 05-12 أو 03):", "").strip().lower()
 
 if query:
-    # تصفية سريعة جداً باستخدام Pandas
+    # تصفية سريعة باستخدام الأعمدة الصحيحة تماماً
     results = df_lotto[df_lotto['date_md'].str.lower().str.contains(query) | df_lotto['full_date'].str.lower().str.contains(query)]
     
     st.markdown("---")
@@ -59,8 +59,8 @@ if query:
     
     if not results.empty:
         for _, row in results.iterrows():
-            st.success(f"📅 **التاريخ:** {row['full_date']} (سنة: {row['year']})  \n"
-                       f"🔢 **الأرقام:** {row['numbers']}  \n"
+            st.success(f"📅 **التاريخ:** {row['full_date']} (سنة: {row['year']})\n\n"
+                       f"🔢 **الأرقام:** {row['numbers']}\n\n"
                        f"📂 **الملف:** {row['file']}")
     else:
         st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا التاريخ.")
