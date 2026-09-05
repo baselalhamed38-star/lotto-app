@@ -5,9 +5,8 @@ import os
 
 st.set_page_config(page_title="سحوبات اللوتو حسب التاريخ", page_icon="🔢", layout="centered")
 
-# تغيير اسم الدالة لتحديث الـ Cache تماماً وإجبار Streamlit على قراءة الكود الجديد
 @st.cache_data
-def load_lotto_data_fresh():
+def load_lotto_data():
     files = [f for f in glob.glob("LOTTO*.xlsx") if "2021" not in f]
     all_draws = []
     
@@ -21,8 +20,8 @@ def load_lotto_data_fresh():
                         val = row.get('Unnamed: 1')
                         if pd.notna(val) and hasattr(val, 'year'):
                             date_obj = pd.to_datetime(val)
-                            date_str = date_obj.strftime('%m-%d')
-                            full_date_str = date_obj.strftime('%Y-%m-%d')
+                            date_str = date_obj.strftime('%m-%d') # الشهر واليوم
+                            full_date_str = date_obj.strftime('%Y-%m-%d') # التاريخ الكامل
                             
                             nums = [str(int(row.get(f'Unnamed: i'))) for i in range(2, 8) if pd.notna(row.get(f'Unnamed: i'))]
                             zusatz = row.get('Unnamed: 8')
@@ -40,20 +39,21 @@ def load_lotto_data_fresh():
             
     return pd.DataFrame(all_draws)
 
-st.title("🔢 نظام البحث السريع في سحوبات اللوتو")
-st.write("ابحث بالتاريخ (الشهر واليوم) لاستخراج أرقام السحب من الملفات المحددة:")
+st.title("🔢 نظام البحث في سحوبات اللوتو")
+st.write("ابحث بالتاريخ (مثال: **05-12** أو **10-09**):")
 
-# تحميل البيانات الجديدة
+# تحميل البيانات
 with st.spinner("جاري تحميل بيانات السحوبات..."):
-    df_lotto = load_lotto_data_fresh()
+    df_lotto = load_lotto_data()
 
-# حقل البحث
-query = st.text_input("أدخل التاريخ (مثال: 05-12 أو 03):", "").strip().lower()
+# خانة البحث
+query = st.text_input("أدخل التاريخ (شهر-يوم أو جزء منه):", "").strip()
 
 if query:
-    # طريقة بحث آمنة جداً تتفادى أي KeyError مهما كانت الأعمدة
-    if not df_lotto.empty and 'date_md' in df_lotto.columns and 'full_date' in df_lotto.columns:
-        mask = df_lotto['date_md'].astype(str).str.lower().str.contains(query) | df_lotto['full_date'].astype(str).str.lower().str.contains(query)
+    if not df_lotto.empty:
+        # بحث مرن في الشهر-اليوم أو التاريخ الكامل
+        mask = df_lotto['date_md'].astype(str).str.contains(query, case=False, na=False) | \
+               df_lotto['full_date'].astype(str).str.contains(query, case=False, na=False)
         results = df_lotto[mask]
     else:
         results = pd.DataFrame()
@@ -63,10 +63,10 @@ if query:
     
     if not results.empty:
         for _, row in results.iterrows():
-            st.success(f"📅 **التاريخ:** {row['full_date']} (سنة: {row['year']})\n\n"
+            st.success(f"📅 **التاريخ:** {row['full_date']} (السنة: {row['year']})\n\n"
                        f"🔢 **الأرقام:** {row['numbers']}\n\n"
                        f"📂 **الملف:** {row['file']}")
     else:
-        st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا التاريخ أو البيانات فارغة.")
+        st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا التاريخ. تأكد من كتابة التاريخ بصيغة الشهر-اليوم مثل `10-09` أو `05-12`.")
 else:
-    st.info("💡 اكتب التاريخ في خانة البحث بالأعلى لعرض السحوبات المطابقة فوراً.")
+    st.info("💡 اكتب التاريخ في خانة البحث بالأعلى (مثال: `09` أو `10-09`) لعرض السحوبات المطابقة فوراً.")
