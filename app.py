@@ -20,7 +20,7 @@ def load_data(uploaded_file):
                 return pd.DataFrame()
             return df
         except Exception as e:
-            st.error(f⚠️ خطأ في قراءة الملف: {e}")
+            st.error(f"⚠️ خطأ في قراءة الملف: {e}")
             return pd.DataFrame()
     else:
         # بيانات تجريبية افتراضية في حال لم يتم رفع ملف بعد
@@ -44,7 +44,7 @@ df_lotto = load_data(uploaded_file)
 if df_lotto.empty:
     st.warning("⚠️ الملف المرفوع فارغ أو لم يتم تحميل البيانات بشكل صحيح.")
 else:
-    # تقسيم الواجهة إلى تبويبات منظمة لتجنب التداخل وضمان عمل كافة الميزات
+    # تقسيم الواجهة إلى تبويبات منظمة
     tab1, tab2, tab3 = st.tabs(["📅 البحث بالتاريخ", "✨ توقعات الأبراج وتاريخ الميلاد", "📊 إحصائيات وتحليل الأرقام"])
 
     # التبويب الأول: البحث بالتاريخ
@@ -53,7 +53,6 @@ else:
         query = st.text_input("أدخل التاريخ (مثال: 05-12 أو 2023-05-12):", "").strip()
         
         if query:
-            # مطابقة مرنة للبحث في جميع أعمدة النص
             mask = df_lotto.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
             results = df_lotto[mask]
             
@@ -76,7 +75,6 @@ else:
             birth_date = st.date_input("أدخل تاريخ ميلادك:", value=datetime(1990, 1, 1))
             
         with col_b2:
-            # تحديد البرج تلقائياً بناءً على تاريخ الميلاد
             def get_zodiac_sign(date):
                 m, d = date.month, date.day
                 if (m == 3 and d >= 21) or (m == 4 and d <= 19): return "الحمل (Aries)"
@@ -88,28 +86,25 @@ else:
                 elif (m == 9 and d >= 23) or (m == 10 and d <= 22): return "الميزان (Libra)"
                 elif (m == 10 and d >= 23) or (m == 11 and d <= 21): return "العقرب (Scorpio)"
                 elif (m == 11 and d >= 22) or (m == 12 and d <= 21): return "القوس (Sagittarius)"
-                elif (m == 12 and d >= 22) or (m == 1/19): return "الجدي (Capricorn)"
+                elif (m == 12 and d >= 22) or (m == 1 and d <= 19): return "الجدي (Capricorn)"
                 elif (m == 1 and d >= 20) or (m == 2 and d <= 18): return "الدلو (Aquarius)"
                 else: return "الحوت (Pisces)"
             
             zodiac = get_zodiac_sign(birth_date)
             st.info(f"✨ برجك الفلكي: **{zodiac}**")
             
-        if st.button("🔮 توليد الأرقام المجدولة والاحتمالات"):
-            # خوارزمية توليد أرقام متوافقة بناءً على قيم تاريخ الميلاد
+        if st.button("🔮 توليد الأرقام المقترحة"):
             np.random.seed(birth_date.toordinal())
             lucky_numbers = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
-            st.success(- f"**الأرقام المقترحة لبرجك وتاريخ ميلادك:** `{', '.join(map(str, lucky_numbers))}`")
+            st.success(f"🔢 **الأرقام المقترحة لبرجك وتاريخ ميلادك:** `{', '.join(map(str, lucky_numbers))}`")
 
     # التبويب الثالث: الإحصائيات وتحليل الأرقام
     with tab3:
         st.subheader("📊 إحصائيات سحوبات اللوتو والتحليل الشامل")
         
-        # استخراج كافة الأرقام وتحويلها لتحليل إحصائي
         all_nums = []
         for nums_str in df_lotto.get('numbers', []):
             if pd.notna(nums_str):
-                # التعامل مع الأرقام سواء كانت مفصولة بفواصل أو مسافات
                 clean_str = str(nums_str).replace('،', ',')
                 parts = [p.strip() for p in clean_str.split(',') if p.strip().isdigit()]
                 all_nums.extend([int(p) for p in parts])
