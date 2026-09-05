@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
-import os
+import io
+import base64
 
 st.set_page_config(page_title="سحوبات اللوتو حسب التاريخ", page_icon="🔢", layout="centered")
 
 @st.cache_data
 def load_data():
-    if os.path.exists("lotto_combined.csv"):
-        return pd.read_csv("lotto_combined.csv")
-    return pd.DataFrame()
+    b64_data = "''' + csv_base64 + '''"
+    decoded_bytes = base64.b64decode(b64_data)
+    return pd.read_csv(io.BytesIO(decoded_bytes))
 
 st.title("🔢 نظام البحث في سحوبات اللوتو")
 st.write("ابحث بالتاريخ (مثال: **10-09** أو **1955-10-09**):")
@@ -16,7 +17,7 @@ st.write("ابحث بالتاريخ (مثال: **10-09** أو **1955-10-09**):")
 df_lotto = load_data()
 
 if df_lotto.empty:
-    st.error("⚠️ ملف البيانات `lotto_combined.csv` غير موجود في المستودع. تأكد من رفعه بجانب `app.py`.")
+    st.error("⚠️ لا توجد بيانات متاحة.")
 else:
     query = st.text_input("أدخل الشهر واليوم أو التاريخ الكامل:", "").strip()
     
