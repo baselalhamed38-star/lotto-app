@@ -5,9 +5,9 @@ import os
 
 st.set_page_config(page_title="سحوبات اللوتو حسب التاريخ", page_icon="🔢", layout="centered")
 
-# دالة محسنة لتحميل البيانات مع تحديث إصدار التخزين المؤقت لتفادي أي بيانات قديمة
-@st.cache_data(version=2)
-def load_lotto_data_v2():
+# دالة لتحميل البيانات مع التخزين المؤقت القياسي السريع والآمن
+@st.cache_data
+def load_lotto_data():
     files = [f for f in glob.glob("LOTTO*.xlsx") if "2021" not in f]
     all_draws = []
     
@@ -45,13 +45,13 @@ st.write("ابحث بالتاريخ (الشهر واليوم) لاستخراج �
 
 # تحميل البيانات المحسنة
 with st.spinner("جاري تحميل بيانات السحوبات..."):
-    df_lotto = load_lotto_data_v2()
+    df_lotto = load_lotto_data()
 
 # حقل البحث
 query = st.text_input("أدخل التاريخ (مثال: 05-12 أو 03):", "").strip().lower()
 
 if query:
-    # استخدام طريقة آمنة تماماً للبحث لتجنب أخطاء الأعمدة
+    # استخدام طريقة آمنة تماماً للبحث لتجنب أي أخطاء
     mask = df_lotto['date_md'].astype(str).str.lower().str.contains(query) | df_lotto['full_date'].astype(str).str.lower().str.contains(query)
     results = df_lotto[mask]
     
