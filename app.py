@@ -5,9 +5,9 @@ import os
 
 st.set_page_config(page_title="سحوبات اللوتو حسب التاريخ", page_icon="🔢", layout="centered")
 
-# دالة لتحميل البيانات مرة واحدة وتخزينها مؤقتاً لتسريع البحث بشكل كبير (Caching)
-@st.cache_data
-def load_lotto_data():
+# دالة محسنة لتحميل البيانات مع تحديث إصدار التخزين المؤقت لتفادي أي بيانات قديمة
+@st.cache_data(version=2)
+def load_lotto_data_v2():
     files = [f for f in glob.glob("LOTTO*.xlsx") if "2021" not in f]
     all_draws = []
     
@@ -43,16 +43,17 @@ def load_lotto_data():
 st.title("🔢 نظام البحث السريع في سحوبات اللوتو")
 st.write("ابحث بالتاريخ (الشهر واليوم) لاستخراج أرقام السحب من الملفات المحددة:")
 
-# تحميل البيانات (يتم تحميلها مرة واحدة فقط وتكون سريعة جداً بعدها)
+# تحميل البيانات المحسنة
 with st.spinner("جاري تحميل بيانات السحوبات..."):
-    df_lotto = load_lotto_data()
+    df_lotto = load_lotto_data_v2()
 
 # حقل البحث
 query = st.text_input("أدخل التاريخ (مثال: 05-12 أو 03):", "").strip().lower()
 
 if query:
-    # تصفية سريعة باستخدام الأعمدة الصحيحة تماماً
-    results = df_lotto[df_lotto['date_md'].str.lower().str.contains(query) | df_lotto['full_date'].str.lower().str.contains(query)]
+    # استخدام طريقة آمنة تماماً للبحث لتجنب أخطاء الأعمدة
+    mask = df_lotto['date_md'].astype(str).str.lower().str.contains(query) | df_lotto['full_date'].astype(str).str.lower().str.contains(query)
+    results = df_lotto[mask]
     
     st.markdown("---")
     st.subheader(f"نتائج البحث ({len(results)} سحب مطابق):")
