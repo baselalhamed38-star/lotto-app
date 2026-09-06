@@ -3,169 +3,136 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-st.set_page_config(page_title="النظام المتقدم لسحوبات اللوتو واليوروجاكبوت", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="نظام تحليل سحوبات اللوتو", page_icon="🎯", layout="wide")
 
-st.title("🎯 النظام المتقدم لتحليل وقراءة ملفات اللوتو و Eurojackpot")
+st.title("🎯 النظام المباشر لتحليل والبحث في سحوبات اللوتو و Eurojackpot")
 
-# دالة قراءة ملفات الإكسل والـ CSV بدقة تامة
 @st.cache_data
-def load_uploaded_files(uploaded_files):
+def load_files(uploaded_files):
     if not uploaded_files:
         return pd.DataFrame()
     
-    all_draws = []
-    
+    all_data = []
     for file in uploaded_files:
+        filename = file.name.lower()
         try:
-            filename = file.name.lower()
-            df = None
-            
             if filename.endswith(('.xlsx', '.xls')):
-                excel_file = pd.ExcelFile(file)
-                for sheet_name in excel_file.sheet_names:
-                    df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
-                    if not df_sheet.empty:
-                        df_sheet['Source_Sheet'] = str(sheet_name)
-                        all_draws.append(df_sheet)
+                # قراءة ملفات الإكسل عبر openpyxl
+                xls = pd.ExcelFile(file)
+                for sheet in xls.sheet_names:
+                    df_s = pd.read_excel(xls, sheet_name=sheet, header=None)
+                    if not df_s.empty:
+                        df_s['File_Sheet'] = f"{file.name} -> {sheet}"
+                        all_data.append(df_s)
             elif filename.endswith('.csv'):
-                # محاولة قراءة ملفات CSV بمختلف الفواصل الشائعة
-                try:
-                    df_csv = pd.read_csv(file, header=None, encoding='utf-8')
-                except:
-                    df_csv = pd.read_csv(file, header=None, encoding='latin1')
-                
-                if not df_csv.empty:
-                    df_csv['Source_Sheet'] = file.name
-                    all_draws.append(df_csv)
+                df_c = pd.read_csv(file, header=None, encoding='utf-8', errors='ignore')
+                if not df_c.empty:
+                    df_c['File_Sheet'] = file.name
+                    all_data.append(df_c)
         except Exception as e:
-            st.error(f"خطأ في قراءة الملف {file.name}: {e}")
+            st.error(f"خطأ في ملف {file.name}: {e}")
             
-    if all_draws:
-        return pd.concat(all_draws, ignore_index=True)
+    if all_data:
+        return pd.concat(all_data, ignore_index=True)
     return pd.DataFrame()
 
-# دالة استخراج السحوبات من البيانات الخام
-def parse_draws_data(df):
+def parse_draws(df):
     if df.empty:
         return pd.DataFrame()
     
-    parsed_data = []
-    
+    extracted = []
     for _, row in df.iterrows():
-        row_vals = row.astype(str).values
-        date_str = None
-        date_idx = -1
-        sheet_src = row.get('Source_Sheet', 'ملف')
+        vals = row.astype(str).values
+        src = row.get('File_Sheet', 'ملف')
+        date_val = None
+        date_pos = -1
         
-        for idx, val in enumerate(row_vals):
+        # البحث عن خلية تاريخ
+        for idx, val in enumerate(vals):
             v = val.strip()
             if '.' in v and len(v) <= 12 and any(c.isdigit() for c in v):
                 parts = v.split('.')
                 if len(parts) >= 2 and parts[0].isdigit():
-                    date_str = v
-                    date_idx = idx
+                    date_val = v
+                    date_pos = idx
                     break
         
-        if date_str and date_idx != -1:
+        if date_val and date_pos != -1:
             nums = []
-            for i in range(date_idx + 1, len(row_vals)):
-                cell = row_vals[i].strip().replace('.0', '')
+            for i in range(date_pos + 1, len(vals)):
+                cell = vals[i].strip().replace('.0', '')
                 if cell.isdigit() and len(cell) <= 2:
                     nums.append(cell)
             
             if len(nums) >= 5:
-                main_nums = ", ".join(nums[:6] if len(nums) >= 6 else nums[:5])
-                extra_num = nums[6] if len(nums) >= 7 else (nums[5] if len(nums) == 6 else nums[-1])
+                main_ns = ", ".join(nums[:6] if len(nums) >= 6 else nums[:5])
+                extra_n = nums[6] if len(nums) >= 7 else (nums[5] if len(nums) == 6 else nums[-1])
                 
-                parsed_data.append({
-                    'sheet': sheet_src,
-                    'date': date_str,
-                    'numbers': main_nums,
-                    'extra': extra_num
+                extracted.append({
+                    'source': src,
+                    'date': date_val,
+                    'numbers': main_ns,
+                    'extra': extra_n
                 })
                 
-    return pd.DataFrame(parsed_data)
+    return pd.DataFrame(extracted)
 
-st.sidebar.header("📂 رفع ملفات السحوبات (Excel & CSV)")
-lotto_files = st.sidebar.file_uploader("ملفات اللوتو (Lotto):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="l_up_files")
-euro_files = st.sidebar.file_uploader("ملفات اليوروجاكبوت (Eurojackpot):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="e_up_files")
+st.sidebar.header("📂 رفع الملفات الرسمية")
+l_files = st.sidebar.file_uploader("ملفات اللوتو (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="lf")
+e_files = st.sidebar.file_uploader("ملفات Eurojackpot (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="ef")
 
-raw_lotto = load_uploaded_files(lotto_files)
-raw_euro = load_uploaded_files(euro_files)
+df_lotto = parse_draws(load_files(l_files))
+df_euro = parse_draws(load_files(e_files))
 
-df_lotto = parse_draws_data(raw_lotto)
-df_euro = parse_draws_data(raw_euro)
+tab1, tab2 = st.tabs(["🍀 اللوتو (Lotto)", "💶 يوروجاكبوت (Eurojackpot)"])
 
-# واجهة التبويبات المنفصلة لكل لعبة
-tab1, tab2 = st.tabs(["🍀 نافذة سحوبات اللوتو (Lotto)", "💶 نافذة سحوبات Eurojackpot"])
-
-def render_game_tab(df, game_name, is_euro=False):
-    st.subheader(f"التحكم والبحث في سحوبات {game_name}")
+def run_tab(df, name, is_euro=False):
+    st.subheader(f"البحث في سحوبات وقاعدة بيانات {name}")
     
     if df.empty:
-        st.warning(f"⚠️ يرجى رفع ملفات {game_name} بصيغة Excel (.xlsx, .xls) أو CSV من القائمة الجانبية لعرض البيانات.")
+        st.warning(f"⚠️ يرجى رفع ملفات {name} بصيغة Excel (.xlsx) أو CSV من القائمة الجانبية.")
         return
         
-    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب بنجاح من الملفات المرفوعة!")
+    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب بنجاح!")
     
-    with st.expander(f"👁️ معاينة جدول السحوبات لـ {game_name}"):
+    with st.expander("👁️ عرض جدول السحوبات المستخرجة"):
         st.dataframe(df, use_container_width=True)
         
     st.markdown("---")
-    st.markdown("### 🔍 البحث الشامل عن التواريخ والسحوبات")
-    search_q = st.text_input(f"أدخل التاريخ أو الجزء المراد البحث عنه في {game_name} (مثال: 09.09 أو 2020):", key=f"sq_{game_name}").strip()
+    query = st.text_input(f"بحث عن تاريخ أو رقم في سحوبات {name} (مثال: 09.09 أو 2020 أو رقم معين):", key=f"q_{name}").strip()
     
-    if search_q:
-        results = df[df['date'].str.contains(search_q, case=False, na=False) | df['sheet'].str.contains(search_q, case=False, na=False)]
-        st.info(f"عدد السحوبات المطابقة: **{len(results)}** سحب")
+    if query:
+        res = df[df['date'].str.contains(query, case=False, na=False) | 
+                 df['numbers'].str.contains(query, case=False, na=False) | 
+                 df['source'].str.contains(query, case=False, na=False)]
+        st.info(f"النتائج المطابقة: **{len(res)}** نتيجة")
         
-        if not results.empty:
-            for _, r in results.iterrows():
-                sh = r['sheet']
-                dt = r['date']
-                nums = r['numbers']
-                ext = r['extra']
-                
+        if not res.empty:
+            for _, r in res.iterrows():
                 if not is_euro:
-                    st.success(f"📂 **الملف/الشيت:** `{sh}` | 📅 **التاريخ:** `{dt}` \n\n 🔢 **الأرقام:** `{nums}` \n\n 🌟 **Superzahl:** `{ext}`")
+                    st.success(f"📂 **المصدر:** `{r['source']}` | 📅 **التاريخ:** `{r['date']}` \n\n 🔢 **الأرقام:** `{r['numbers']}` \n\n 🌟 **Superzahl:** `{r['extra']}`")
                 else:
-                    st.success(f"📂 **الملف/الشيت:** `{sh}` | 📅 **التاريخ:** `{dt}` \n\n 💶 **الأرقام الرئيسية:** `{nums}` \n\n ⭐ **Sternzahl:** `{ext}`")
+                    st.success(f"📂 **المصدر:** `{r['source']}` | 📅 **التاريخ:** `{r['date']}` \n\n 💶 **الأرقام:** `{r['numbers']}` \n\n ⭐ **Sternzahl:** `{r['extra']}`")
         else:
-            st.warning("⚠️ لا توجد نتائج مطابقة لهذا التاريخ في الملفات المرفوعة.")
+            st.warning("⚠️ لا توجد نتائج مطابقة لبحثك.")
             
     st.markdown("---")
-    st.markdown(f"### 🔮 توليد الأرقام والاحتمالات المخصصة لعام 2026 ({game_name})")
-    
-    # إضافة حقول الأبراج وتاريخ الميلاد ضمن نافذة التوليد لكل لعبة على حدة
-    col1, col2 = st.columns(2)
-    with col1:
-        user_birthdate = st.date_input(f"تاريخ ميلادك لـ {game_name}:", key=f"bdate_{game_name}")
-    with col2:
-        user_zodiac = st.selectbox(f"برجك الفلكي لـ {game_name}:", [
-            "الحمل", "الثور", "الجوزاء", "السرطان", "الأسد", "العذراء", 
-            "الميزان", "العقرب", "القوس", "الجدي", "الدلو", "الحوت"
-        ], key=f"zodiac_{game_name}")
-        
-    if st.button(f"🎲 توليد احتمال جديد بناءً على السحوبات والأبراج ({game_name})", key=f"btn_gen_{game_name}"):
-        # دمج بذور عشوائية تعتمد على التاريخ والميلاد لتتغير في كل ضغطة
-        seed_val = int(datetime.now().strftime("%f")) + user_birthdate.day
-        np.random.seed(seed_val)
-        
+    st.markdown(f"### 🔮 توليد احتمالات عام 2026 لـ {name}")
+    if st.button(f"🎲 توليد احتمالات جديدة لـ {name}", key=f"btn_{name}"):
+        np.random.seed(int(datetime.now().strftime("%f")))
         if not is_euro:
             p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             p_ext = int(np.random.randint(0, 10))
-            st.code(f"Lotto_Eq_2026 = (Zodiac_{user_zodiac} * File_History_Sum) mod 49", language="python")
-            st.metric("أرقام اللوتو المقترحة لعام 2026", str(p_nums))
+            st.metric("أرقام اللوتو المقترحة", str(p_nums))
             st.metric("رقم Superzahl المقترح", str(p_ext))
         else:
             p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
             p_ext = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-            st.code(f"Euro_Eq_2026 = (Zodiac_{user_zodiac} * Euro_Matrix_Index) mod 50", language="python")
-            st.metric("الأرقام الرئيسية المقترحة لعام 2026", str(p_nums))
+            st.metric("الأرقام الرئيسية المقترحة", str(p_nums))
             st.metric("أرقام Sternzahl المقترحة", str(p_ext))
 
 with tab1:
-    render_game_tab(df_lotto, "اللوتو", False)
+    run_tab(df_lotto, "اللوتو", False)
 
 with tab2:
-    render_game_tab(df_euro, "Eurojackpot", True)
+    run_tab(df_euro, "Eurojackpot", True)
