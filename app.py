@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="نظام تحليل وتوقع سحوبات اللوتو و Eurojackpot", page_icon="🎰", layout="wide")
 
-# دالة ذكية جداً لقراءة ملفات Excel / CSV / JSON واجتياز كل النوافذ (Sheets)
+# دالة ذكية جداً لقراءة ملفات Excel / CSV / JSON مع معالجة مكتبة openpyxl
 @st.cache_data
 def load_uploaded_file(uploaded_file):
     if uploaded_file is not None:
@@ -16,13 +16,20 @@ def load_uploaded_file(uploaded_file):
             elif filename.endswith('.csv'):
                 df = pd.read_csv(uploaded_file)
             elif filename.endswith(('.xlsx', '.xls')):
-                xls = pd.ExcelFile(uploaded_file)
-                dfs = []
-                for sheet in xls.sheet_names:
-                    temp_df = pd.read_excel(xls, sheet_name=sheet)
-                    if not temp_df.empty:
-                        dfs.append(temp_df)
-                df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+                try:
+                    xls = pd.ExcelFile(uploaded_file)
+                    dfs = []
+                    for sheet in xls.sheet_names:
+                        temp_df = pd.read_excel(xls, sheet_name=sheet)
+                        if not temp_df.empty:
+                            dfs.append(temp_df)
+                    df = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+                except Exception as ex:
+                    if "openpyxl" in str(ex):
+                        st.error("⚠️ مكتبة قراءة ملفات الإكسل (openpyxl) غير مثبتة. يرجى إضافتها إلى ملف requirements.txt.")
+                    else:
+                        st.error(f"خطأ في قراءة ملف الإكسل: {ex}")
+                    return pd.DataFrame(), False
             else:
                 return pd.DataFrame(), False
             return df, True
