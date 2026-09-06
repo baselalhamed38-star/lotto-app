@@ -7,7 +7,6 @@ st.set_page_config(page_title="تحليل سحوبات اللوتو واليور
 
 st.title("🎯 النظام المخصص لقراءة ملفات اللوتو واليوروجاكبوت الرسمية بدقة")
 
-# دالة قراءة الملفات الحقيقية من الإكسل
 @st.cache_data
 def load_real_excel_files(uploaded_files):
     if not uploaded_files:
@@ -22,7 +21,6 @@ def load_real_excel_files(uploaded_files):
             if filename.endswith(('.xlsx', '.xls')):
                 excel_file = pd.ExcelFile(file)
                 for sheet_name in excel_file.sheet_names:
-                    # قراءة الشيت بدون ترويسة افتراضية لنتمكن من فحص الصفوف بدقة
                     df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
                     if not df_sheet.empty:
                         all_rows.append(df_sheet)
@@ -41,7 +39,6 @@ def load_real_excel_files(uploaded_files):
         
     return pd.DataFrame(), False
 
-# دالة مطابقة لهيكل ملفاتك الرسمية تماماً
 def parse_lotto_file_exact(df):
     if df.empty:
         return pd.DataFrame()
@@ -53,33 +50,23 @@ def parse_lotto_file_exact(df):
         found_date = None
         date_idx = -1
         
-        # البحث عن خلية تحتوي على تاريخ بصيغة يوم.شهر (مثل 09.09 أو 09.09.2020)
         for idx, val in enumerate(row_vals):
             v = val.strip()
-            # فحص إذا كانت الخلية تحتوي على تاريخ نقطي مثل ملفات اللوتو الألمانية
             if ('.' in v and len(v) >= 5 and len(v) <= 12 and any(c.isdigit() for c in v)):
                 found_date = v
                 date_idx = idx
                 break
                 
         if found_date and date_idx != -1:
-            # استخراج الأرقام التي تلي عمود التاريخ مباشرة
             nums_collected = []
             for i in range(date_idx + 1, len(row_vals)):
                 cell = row_vals[i].strip().replace('.0', '')
                 if cell.isdigit():
                     nums_collected.append(cell)
             
-            # في ملفات اللوتو: نحتاج 6 أرقام رئيسية + رقم إضافي (Superzahl/Sternzahl)
             if len(nums_collected) >= 6:
                 main_numbers = ", ".join(nums_collected[:6])
                 extra_number = nums_collected[6] if len(nums_collected) > 6 else nums_collected[-1]
-                
-                # تنسيق التاريخ ليصبح كاملاً أو مقروءاً
-                full_date_str = found_date
-                if len(found_date.split('.')) == 2:
-                    # إذا كان التاريخ بدون سنة، نحاول استنتاجها من اسم الشيت أو نتركها
-                    full_date_str = found_date + "2020" # افتراضي أو حسب الإدخال
                 
                 parsed_data.append({
                     'date': found_date,
@@ -99,13 +86,11 @@ raw_euro, e_success = load_real_excel_files(euro_files)
 df_lotto = parse_lotto_file_exact(raw_lotto)
 df_euro = parse_lotto_file_exact(raw_euro)
 
-# مؤشرات حالة الرفع الحقيقي
 if l_success and not df_lotto.empty:
     st.sidebar.success(f"✅ تم تحميل ملفات اللوتو وقراءة {len(df_lotto)} سحب بنجاح!")
 else:
     if lotto_files:
-        st.sidebar.warning("⚠️ الملف مرفق ولكن لم يتم التعرف على هيكل الأعمدة. تأكد أن ملف اللوتو مطابق للنسخة الأصلية.")
-    # بيانات مطابقة لصورك للتجربة الفورية
+        st.sidebar.warning("⚠️ الملف مرفق ولكن لم يتم التعرف على هيكل الأعمدة.")
     df_lotto = pd.DataFrame([
         {'date': '09.09.', 'numbers': '35, 49, 24, 16, 22, 9', 'extra': '0'},
         {'date': '09.09.2020', 'numbers': '35, 49, 24, 16, 22, 9', 'extra': '0'}
@@ -132,7 +117,6 @@ def render_game_section(df, title, is_euro=False):
     search_input = st.text_input(f"أدخل التاريخ للبحث في {title} (مثال: 09.09):", key=f"inp_{title}").strip()
     
     if search_input:
-        # بحث دقيق يطابق التاريخ المدخل تماماً
         matched = df[df['date'].str.contains(search_input)]
         st.info(f"عدد السحوبات المطابقة تماماً لتاريخ ({search_input}): **{len(matched)}** سحب")
         
@@ -150,7 +134,7 @@ def render_game_section(df, title, is_euro=False):
             st.warning("⚠️ لم يتم العثور على سحب مطابق لهذا التاريخ في الملفات المرفوعة.")
             
     st.markdown("---")
-    st.markdown(### 🔮 التحليل الرياضي واستخراج توقعات عام 2026")
+    st.markdown("### 🔮 التحليل الرياضي واستخراج توقعات عام 2026")
     
     if st.button(f"⚙️ توليد معادلة وتوقعات 2026 لـ {title}", key=f"btn_pred_{title}"):
         np.random.seed(777 if not is_euro else 888)
