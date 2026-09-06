@@ -34,45 +34,38 @@ def load_and_clean_excel(uploaded_files):
             st.error(f"خطأ في قراءة الملف {file.name}: {e}")
             
     if all_rows:
-        # دمج كل الشيتات
         big_df = pd.concat(all_rows, ignore_index=True)
         return big_df, success
         
     return pd.DataFrame(), False
 
-# البحث الذكي في الجدول عن عمود التاريخ وعمود الأرقام
 def process_lotto_dataframe(df):
     if df.empty:
         return pd.DataFrame()
     
     cleaned_data = []
     
-    # المرور على صفوف الملف لتخطي الترويسات العلوية والبحث عن صفوف التواريخ والأرقام
     for idx, row in df.iterrows():
         row_str = row.astype(str).values
         date_val = None
         date_col_idx = -1
         
-        # البحث عن خلية تحتوي على تاريخ (مثال تحتوي على نقطة أو تاريخ صريح مثل 09.09 أو 2020)
         for c_idx, val in enumerate(row_str):
             val_s = val.strip()
-            # التحقق إذا كانت الخلية تحتوي على تاريخ بصيغة يوم.شهر مثل 09.09 أو تاريخ كامل
             if ('.' in val_s and len(val_s) <= 10 and any(char.isdigit() for char in val_s)) or ('-' in val_s) or ('/' in val_s):
                 date_val = val_s
                 date_col_idx = c_idx
                 break
         
         if date_val and date_col_idx != -1:
-            # استخراج الأرقام التي تقع في الأعمدة المجاورة لليمين
             nums = []
             for c in range(date_col_idx + 1, len(row_str)):
                 cell_val = str(row_str[c]).strip()
                 if cell_val.replace('.0', '').isdigit():
                     nums.append(cell_val.replace('.0', ''))
             
-            if len(nums >= 5):
-                # أول أرقام هي الأرقام المسحوبة، والأخير غالباً هو الـ Superzahl/Sternzahl
-                main_nums = ", ".join(nums[:-1]) if len(nums) > 6 else ", ".join(nums[:-1])
+            if len(nums) >= 5:
+                main_nums = ", ".join(nums[:-1])
                 extra_num = nums[-1] if len(nums) >= 6 else ""
                 
                 cleaned_data.append({
@@ -94,7 +87,7 @@ df_lotto = process_lotto_dataframe(raw_lotto_df)
 df_euro = process_lotto_dataframe(raw_euro_df)
 
 if l_ok and not df_lotto.empty:
-    st.sidebar.success(fi"✅ تم معالجة سحوبات اللوتو بنجاح! ({len(df_lotto)} سحب)")
+    st.sidebar.success(f"✅ تم معالجة سحوبات اللوتو بنجاح! ({len(df_lotto)} سحب)")
 else:
     df_lotto = pd.DataFrame([
         {'raw_date': '09.09.2020', 'numbers': '5, 12, 23, 34, 42, 15', 'extra': '3'},
