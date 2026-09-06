@@ -7,7 +7,6 @@ st.set_page_config(page_title="نظام تحليل وتوقع سحوبات ال�
 
 st.title("🎯 النظام الاحترافي لتحليل وقراءة سحوبات اللوتو واليوروجاكبوت")
 
-# دالة قراءة الملفات الذكية (تدعم الإكسل و CSV و JSON)
 @st.cache_data
 def load_uploaded_file(uploaded_file):
     if uploaded_file is not None:
@@ -37,10 +36,9 @@ def load_uploaded_file(uploaded_file):
             return pd.DataFrame(), False
     return pd.DataFrame(), False
 
-# دالة ذكية لتنسيق واستخراج التاريخ والشهر واليوم
 def smart_extract_month_day(val):
     if pd.isna(val):
-        return ""
+        return "", "", 2026
     if isinstance(val, (int, float)):
         try:
             dt = pd.to_datetime(val, unit='d', origin='1899-12-30', errors='coerce')
@@ -56,18 +54,15 @@ def smart_extract_month_day(val):
         
     return str(val), str(val), 2026
 
-# شريط جانبي لرفع الملفات
 st.sidebar.header("📂 إدارة ملفات السحوبات (Excel / CSV)")
 lotto_file = st.sidebar.file_uploader("رفع ملف سحوبات اللوتو (Lotto):", type=["xlsx", "xls", "csv", "json"], key="lotto")
 euro_file = st.sidebar.file_uploader("رفع ملف سحوبات اليوروجاكبوت (Eurojackpot):", type=["xlsx", "xls", "csv", "json"], key="euro")
 
-# معالجة ملف اللوتو
 raw_lotto, lotto_ok = load_uploaded_file(lotto_file)
 if lotto_ok and not raw_lotto.empty:
     df_lotto = raw_lotto
     st.sidebar.success(f"✅ تم رفع ملف اللوتو بنجاح! ({len(df_lotto)} سحب)")
 else:
-    # بيانات افتراضية تجريبية في حال لم يتم رفع ملف
     df_lotto = pd.DataFrame([
         {"full_date": "2020-09-09", "numbers": "5, 12, 23, 34, 42, 15"},
         {"full_date": "2023-09-09", "numbers": "3, 14, 25, 33, 40, 8"},
@@ -76,7 +71,6 @@ else:
     if lotto_file is not None:
         st.sidebar.warning("⚠️ تم استخدام البيانات الافتراضية لعدم تطابق الأعمدة.")
 
-# معالجة ملف اليوروجاكبوت
 raw_euro, euro_ok = load_uploaded_file(euro_file)
 if euro_ok and not raw_euro.empty:
     df_euro = raw_euro
@@ -89,18 +83,15 @@ else:
     if euro_file is not None:
         st.sidebar.warning("⚠️ تم استخدام البيانات الافتراضية لعدم تطابق الأعمدة.")
 
-# تبويبات التطبيق
 tab1, tab2 = st.tabs(["🍀 سحوبات اللوتو (Lotto)", "💶 سحوبات اليوروجاكبوت (Eurojackpot)"])
 
 def run_app_section(df, game_name):
     st.subheader(f"بحث وتحليل سحوبات {game_name}")
     
-    # تحديد الأعمدة تلقائياً (الأول للتاريخ، الثاني للأرقام)
     cols = df.columns.tolist()
     date_col = cols[0]
     num_col = cols[1] if len(cols) > 1 else cols[0]
     
-    # معالجة أعمدة التاريخ لاستخراج الشهر واليوم والسنة
     processed_dates = []
     processed_md = []
     processed_years = []
@@ -119,11 +110,9 @@ def run_app_section(df, game_name):
         
     st.markdown("---")
     
-    # خانة البحث بالتاريخ
     search_query = st.text_input(f"أدخل التاريخ للبحث (مثال: 09-09 أو 2023-09-09):", key=f"search_{game_name}").strip()
     
     if search_query:
-        # البحث إما بالتاريخ الكامل أو بالشهر واليوم
         results = df[(df['clean_date'].str.contains(search_query)) | (df['month_day'] == search_query)]
         st.info(f"عدد السحوبات المطابقة: `{len(results)}` سحب")
         
@@ -140,10 +129,10 @@ def run_app_section(df, game_name):
         with st.spinner("جاري تحليل السحوبات التاريخية واستخراج المعادلات الرياضية..."):
             np.random.seed(42)
             pred_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
-            formula_text = f"Eq_2026 = (Historical_Frequency_Mean * 1.08) + (Delta_Time_Interval * 0.5) mod 49"
+            formula_text = "Eq_2026 = (Historical_Frequency_Mean * 1.08) + (Delta_Time_Interval * 0.5) mod 49"
             
             st.success("تم تحليل السحوبات بنجاح واستخراج النتائج!")
-            st.markdown(#### المعادلة المستخرجة للتحليل:")
+            st.markdown("#### المعادلة المستخرجة للتحليل:")
             st.code(formula_text, language="python")
             st.metric(label="الأرقام المقترحة لسحب عام 2026", value=str(pred_nums))
 
