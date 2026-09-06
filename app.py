@@ -2,11 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import re
 
 st.set_page_config(page_title="نظام تحليل وتوقع سحوبات اللوتو", page_icon="🎯", layout="wide")
 
-# دالة ذكية لتحميل الملفات وقراءتها
 @st.cache_data
 def load_data(uploaded_file):
     if uploaded_file is not None:
@@ -23,10 +21,10 @@ def load_data(uploaded_file):
     else:
         # بيانات افتراضية للتجربة
         sample_data = [
-            {"full_date": "1955-09-09", "date_md": "09-09", "year": 1955, "numbers": "5, 12, 23, 34, 42, 15"},
-            {"full_date": "2010-09-09", "date_md": "09-09", "year": 2010, "numbers": "3, 14, 25, 33, 40, 8"},
-            {"full_date": "2015-09-09", "date_md": "09-09", "year": 2015, "numbers": "5, 14, 23, 28, 40, 12"},
-            {"full_date": "2023-05-12", "date_md": "05-12", "year": 2023, "numbers": "7, 11, 19, 28, 39, 22"}
+            {"full_date": "1955-09-09", "numbers": "5, 12, 23, 34, 42, 15"},
+            {"full_date": "2010-09-09", "numbers": "3, 14, 25, 33, 40, 8"},
+            {"full_date": "2015-09-09", "numbers": "5, 14, 23, 28, 40, 12"},
+            {"full_date": "2023-05-12", "numbers": "7, 11, 19, 28, 39, 22"}
         ]
         return pd.DataFrame(sample_data)
 
@@ -41,27 +39,40 @@ df_lotto = load_data(uploaded_file)
 if df_lotto.empty:
     st.warning("⚠️ لا توجد بيانات متاحة.")
 else:
-    # التعرف التلقائي على أسماء الأعمدة في ملفك
+    # التعرف على عمود التاريخ والأرقام بذكاء
     date_col = next((col for col in df_lotto.columns if 'date' in col.lower() or 'تاريخ' in col), df_lotto.columns[0])
     num_col = next((col for col in df_lotto.columns if 'num' in col.lower() or 'result' in col.lower() or 'رقم' in col or 'ارقام' in col), df_lotto.columns[1] if len(df_lotto.columns) > 1 else df_lotto.columns[0])
 
-    tab1, tab2 = st.tabs(["📅 البحث الدقيق بالتاريخ وتحليل السحوبات", "✨ توقعات الأبراج والفلك"])
+    # معالجة تواريخ الملف لاستخراج الشهر واليوم بدقة (لضمان مطابقة اليوم والشهر فقط دون السنة)
+    df_lotto['parsed_date'] = pd.to_datetime(df_lotto[date_col], errors='coerce')
+    df_lotto['month_day'] = df_lotto['parsed_date'].dt.strftime('%m-%d') # صيغة ثابتة MM-DD
 
-    # التبويب الأول: البحث الدقيق والتحليل المستند إلى السحوبات المطابقة
+    tab1, tab2 = st.tabs(["📅 البحث الدقيق بالتاريخ (يوم وشهر)", "✨ توقعات الأبراج والفلك"])
+
     with tab1:
-        st.subheader("🔍 البحث بالتاريخ (يوم وشهر) وتحليل النتائج")
-        st.info("💡 أدخل الشهر واليوم (مثال: `09-09` أو `09.09`) ليبحث النظام عن كافة السحوبات في هذا التاريخ ويقترح عليك أرقاماً بناءً عليها.")
+        st.subheader("🔍 البحث الدقيق بيوم وشهر السحب")
+        st.info("💡 أدخل الشهر واليوم (مثال: `09-09` أو `09.09`) ليبحث النظام حصرياً عن السحوبات التي حدثت في هذا اليوم من كل السنوات دون التأثر بالسنة.")
         
-        query = st.text_input("أدخل الشهر واليوم:", "").strip()
+        query = st.text_input("أدخل الشهر واليوم (مثال: 09-09 أو 05-12):", "").strip()
         
         if query:
-            # توحيد صيغة البحث (استبدال النقطة بشرطة لضمان المطابقة بغض النظر عن طريقة الكتابة)
+            # توحيد إدخال المستخدم إلى صيغة MM-DD
             norm_query = query.replace('.', '-')
             
-            # فلترة دقيقة تبحث عن السحوبات التي تحتوي على هذا الشهر واليوم فقط
-            results = df_lotto[df_lotto[date_col].astype(str).str.contains(norm_query, case=False, na=False)]
+            # محاولة فهم المدخلات (سواء كتب المستخدم يوم-شهر أو شهر-يوم)
+            # سنقوم بمطابقة النطاق الذي ينتهي أو يطابق الشهر واليوم المدخل
+            results = df_lotto[
+                df_lotto['month_day'] == norm_query
+            ]
             
-            st.markdown(f"**عدد السحوبات المسجلة في هذا التاريخ عبر السنين:** `{len(results)}` سحب")
+            # إذا لم يجد تطابقاً مباشراً، نبحث بطريقة تدعم عكس اليوم والشهر احتياطياً
+            if results.empty:
+                parts = norm_query.split('-')
+                if len(parts) == 2:
+                    reversed_query = f"{parts[1]}-{parts[0]}"
+                    results = df_lotto[df_lotto['month_day'] == reversed_query]
+
+            st.markdown(f"**عدد السحوبات المسجلة في هذا اليوم والشهر عبر السنين:** `{len(results)}` سحب")
             
             if not results.empty:
                 found_numbers = []
@@ -70,11 +81,10 @@ else:
                     n_val = row.get(num_col, 'غير متوفر')
                     st.success(f"📅 **التاريخ:** {d_val} \n\n 🔢 **الأرقام:** `{n_val}`")
                     
-                    # جمع الأرقام لتحليلها
                     if pd.notna(n_val):
                         clean_str = str(n_val).replace('،', ',').replace('.', ',')
-                        parts = [p.strip() for p in clean_str.split(',') if p.strip().isdigit()]
-                        found_numbers.extend([int(p) for p in parts])
+                        parts_nums = [p.strip() for p in clean_str.split(',') if p.strip().isdigit()]
+                        found_numbers.extend([int(p) for p in parts_nums])
                 
                 st.markdown("---")
                 st.subheader("📊 تحليل أرقام السحوبات المطابقة وتوليد الـ 6 مقترحات:")
@@ -83,14 +93,12 @@ else:
                     s = pd.Series(found_numbers)
                     counts = s.value_counts()
                     
-                    st.write(f"الأرقام الأكثر تكراراً في هذا التاريخ تحديداً: `{list(counts.head(6).index)}`")
+                    st.write(f"الأرقام الأكثر تكراراً في هذا التاريخ تاريخياً: `{list(counts.head(6).index)}`")
                     
                     if st.button("🎲 توليد 6 أرقام مقترحة بناءً على سحوبات هذا التاريخ"):
-                        # خوارزمية ذكية تدمج الأرقام المتكررة تاريخياً مع عشوائية محسوبة
                         top_frequent = list(counts.index[:10])
-                        np.random.seed(len(found_numbers) * 7)
+                        np.random.seed(len(found_numbers) * 13)
                         
-                        # اختيار بعض الأرقام من الأكثر تكراراً وإكمال الباقي عشوائياً لضمان الحصول على 6 أرقام فريدة
                         sample_size = min(3, len(top_frequent))
                         chosen_frequent = np.random.choice(top_frequent, sample_size, replace=False).tolist() if top_frequent else []
                         
@@ -106,12 +114,10 @@ else:
                 else:
                     st.warning("⚠️ لا توجد أرقام كافية ضمن السحوبات المطابقة لتحليلها.")
             else:
-                st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا التاريخ بالذات. تأكد من صيغة الإدخال (مثال: 09-09).")
+                st.warning("⚠️ لم يتم العثور على أي سحب مطابق لهذا اليوم والشهر. تأكد من صيغة الإدخال (مثال: 09-09).")
 
-    # التبويب الثاني: الأبراج وتاريخ الميلاد
     with tab2:
         st.subheader("🌟 توليد توقعات الأبراج وتاريخ الميلاد")
-        
         col_b1, col_b2 = st.columns(2)
         with col_b1:
             birth_date = st.date_input("تاريخ ميلادك:", value=datetime(1990, 5, 15))
