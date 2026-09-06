@@ -2,14 +2,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import io
 
 st.set_page_config(page_title="نظام تحليل سحوبات اللوتو", page_icon="🎯", layout="wide")
 
 st.title("🎯 النظام المباشر لتحليل والبحث في سحوبات اللوتو و Eurojackpot")
 
 @st.cache_data
-def load_files_safely(uploaded_files):
+def load_excel_safely(uploaded_files):
     if not uploaded_files:
         return pd.DataFrame()
     
@@ -17,12 +16,20 @@ def load_files_safely(uploaded_files):
     for file in uploaded_files:
         filename = file.name.lower()
         try:
-            # قراءة الملف كـ CSV أو نص لضمان عدم حدوث أي أخطاء نهائياً
-            df = pd.read_csv(file, header=None, encoding='utf-8', errors='ignore')
-            df['File_Sheet'] = file.name
-            all_data.append(df)
+            if filename.endswith(('.xlsx', '.xls')):
+                # قراءة جميع أوراق العمل (Sheets) في ملف الإكسل
+                xls = pd.ExcelFile(file)
+                for sheet_name in xls.sheet_names:
+                    df = pd.read_excel(xls, sheet_name=sheet_name, header=None)
+                    if not df.empty:
+                        df['File_Sheet'] = f"{file.name} [{sheet_name}]"
+                        all_data.append(df)
+            elif filename.endswith('.csv'):
+                df = pd.read_csv(file, header=None, encoding='utf-8', errors='ignore')
+                df['File_Sheet'] = file.name
+                all_data.append(df)
         except Exception as e:
-            st.error(f"❌ خطأ في قراءة الملف {file.name}: تأكد من حفظه بصيغة CSV.")
+            st.error(f"❌ تعذر قراءة الملف {file.name}: {e}")
             
     if all_data:
         return pd.concat(all_data, ignore_index=True)
@@ -68,13 +75,14 @@ def parse_draws(df):
                 
     return pd.DataFrame(extracted)
 
-st.sidebar.header("📂 رفع الملفات الرسمية")
-st.sidebar.info("💡 يرجى حفظ ملف السحوبات بصيغة **CSV** قبل رفعه لضمان قراءته بشكل فوري وصحيح.")
-l_files = st.sidebar.file_uploader("ملفات اللوتو (CSV):", type=["csv"], accept_multiple_files=True, key="lf")
-e_files = st.sidebar.file_uploader("ملفات Eurojackpot (CSV):", type=["csv"], accept_multiple_files=True, key="ef")
+st.sidebar.header("📂 رفع ملفات الإكسل الرسمية")
+st.sidebar.info("💡 يمكنك الآن رفع ملفات الإكسل (.xlsx, .xls) أو CSV مباشرة بكل سهولة.")
 
-df_lotto = parse_draws(load_files_safely(l_files))
-df_euro = parse_draws(load_files_safely(e_files))
+l_files = st.sidebar.file_uploader("ملفات اللوتو (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="lf")
+e_files = st.sidebar.file_uploader("ملفات Eurojackpot (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="ef")
+
+df_lotto = parse_draws(load_excel_safely(l_files))
+df_euro = parse_draws(load_excel_safely(e_files))
 
 tab1, tab2 = st.tabs(["🍀 اللوتو (Lotto)", "💶 يوروجاكبوت (Eurojackpot)"])
 
@@ -82,10 +90,10 @@ def run_tab(df, name, is_euro=False):
     st.subheader(f"البحث في سحوبات وقاعدة بيانات {name}")
     
     if df.empty:
-        st.info(f"💡 يرجى رفع ملفات {name} بصيغة CSV من القائمة الجانبية.")
+        st.info(f"💡 يرجى رفع ملفات الإكسل الخاصة بـ {name} من القائمة الجانبية.")
         return
         
-    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب بنجاح!")
+    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب من ملفات الإكسل بنجاح!")
     
     with st.expander("👁️ عرض جدول السحوبات المستخرجة"):
         st.dataframe(df, use_container_width=True)
