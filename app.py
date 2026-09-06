@@ -48,7 +48,7 @@ df_euro, files_euro = load_game_files("euro")
 
 tab1, tab2 = st.tabs(["🍀 اللوتو (Lotto)", "💶 يوروجاكبوت (Eurojackpot)"])
 
-def run_independent_tabs(df, game_name, matched_files, is_euro=False):
+def run_fully_independent_tabs(df, game_name, matched_files, is_euro=False):
     st.subheader(f"📊 تحليل السحوبات القديمة لـ {game_name}")
     st.info(f"📁 الملفات المرتبطة: `{matched_files if matched_files else 'ملفات عامة'}`")
     
@@ -56,89 +56,78 @@ def run_independent_tabs(df, game_name, matched_files, is_euro=False):
         st.error(f"⚠️ تنبيه: لم يتم العثور على ملفات تخص {game_name} في المستودع.")
         return
         
-    # تحليل إحصائي للسحوبات القديمة
     total_rows = len(df)
     numeric_sum = int(df.select_dtypes(include=[np.number]).sum().sum()) % 1000 if not df.select_dtypes(include=[np.number]).empty else 400
     
-    st.success(f"📈 تحليل الأرشيف: تم رصد **{total_rows}** سحب قديم في قاعدة بيانات {game_name} واستخراج معامل التكرار الإحصائي بنجاح.")
+    st.success(f"📈 تم رصد **{total_rows}** سحب قديم في أرشيف {game_name} لاستخدامها في تحليل ومعادلات 2026.")
     
     with st.expander(f"👁️ استعراض أرشيف السحوبات القديمة لـ {game_name}"):
         st.dataframe(df, use_container_width=True)
         
     st.markdown("---")
     
-    # تقسيم الصفحة إلى نافذتين منفصلتين بالكامل (الأبراج لوحدها وتاريخ الميلاد لوحدها)
-    col_zodiac, col_birth = st.columns(2)
+    # ----------------- 1. نافذة تاريخ الميلاد المستقلة تماماً -----------------
+    st.markdown("### 📅 نافذة تاريخ الميلاد المستقلة")
+    birth_date = st.date_input(f"حدد تاريخ ميلادك لـ {game_name}:", value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
     
-    # ----------------- النافذة الأولى: الأبراج -----------------
-    with col_zodiac:
-        st.markdown("### 🌟 نافذة الأبراج وحدها")
-        st.markdown("توليد الأرقام المخصصة لسحب اليوم (2026) بناءً على تحليل الأرشيف ومعامل البرج الفلكي:")
+    birth_counter_key = f"counter_birth_{game_name}"
+    if birth_counter_key not in st.session_state:
+        st.session_state[birth_counter_key] = 0
         
-        zodiac = st.selectbox(f"اختر برجك الفلكي لـ {game_name}:", 
-                              ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
-                               "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", 
-                               "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"], key=f"z_{game_name}")
+    if st.button(f"🎲 توليد أرقام 2026 (عبر تاريخ الميلاد فقط) لـ {game_name}", key=f"btn_birth_{game_name}"):
+        st.session_state[birth_counter_key] += 1
         
-        zodiac_key = f"counter_z_{game_name}"
-        if zodiac_key not in st.session_state:
-            st.session_state[zodiac_key] = 0
-            
-        if st.button(f"🎲 توليد أرقام 2026 عبر (الأبراج) لـ {game_name}", key=f"btn_z_{game_name}"):
-            st.session_state[zodiac_key] += 1
-            
-        if st.session_state[zodiac_key] > 0:
-            seed_z = total_rows + numeric_sum + hash(zodiac) + (st.session_state[zodiac_key] * 55) + int(datetime.now().strftime("%f"))
-            np.random.seed(seed_z)
-            
-            st.markdown(f"**✨ التوقع رقم ({st.session_state[zodiac_key]}) لبرج {zodiac.split()[0]} لسحب اليوم 2026:**")
-            if not is_euro:
-                p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
-                p_super = int(np.random.randint(0, 10))
-                st.metric("أرقام اللوتو (الأبراج)", str(p_nums))
-                st.metric("رقم Superzahl", str(p_super))
-            else:
-                p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
-                p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-                st.metric("الأرقام الرئيسية (الأبراج)", str(p_nums))
-                st.metric("أرقام النجوم (Sternzahl)", str(p_stars))
+    if st.session_state[birth_counter_key] > 0:
+        seed_birth = total_rows + numeric_sum + birth_date.toordinal() + (st.session_state[birth_counter_key] * 99)
+        np.random.seed(seed_birth)
+        
+        st.success(f"✨ نتيجة توليد تاريخ الميلاد (التوقع رقم {st.session_state[birth_counter_key]}):")
+        if not is_euro:
+            p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+            p_super = int(np.random.randint(0, 10))
+            st.metric("أرقام اللوتو (تاريخ الميلاد)", str(p_nums))
+            st.metric("رقم Superzahl", str(p_super))
         else:
-            st.info("👆 اضغط على زر توليد الأبراج للحصول على النتيجة.")
-
-    # ----------------- النافذة الثانية: تاريخ الميلاد -----------------
-    with col_birth:
-        st.markdown("### 📅 نافذة تاريخ الميلاد وحدها")
-        st.markdown("توليد الأرقام المخصصة لسحب اليوم (2026) بناءً على تحليل الأرشيف ومعادلة تاريخ الميلاد:")
+            p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
+            p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
+            st.metric("الأرقام الرئيسية (تاريخ الميلاد)", str(p_nums))
+            st.metric("أرقام النجوم (Sternzahl)", str(p_stars))
+            
+    st.markdown("---")
+    
+    # ----------------- 2. نافذة الأبراج الفلكية المستقلة تماماً -----------------
+    st.markdown("### 🌟 نافذة الأبراج الفلكية المستقلة")
+    zodiac = st.selectbox(f"اختر برجك الفلكي لـ {game_name}:", 
+                          ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
+                           "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", 
+                           "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"], key=f"z_select_{game_name}")
+    
+    zodiac_counter_key = f"counter_zodiac_{game_name}"
+    if zodiac_counter_key not in st.session_state:
+        st.session_state[zodiac_counter_key] = 0
         
-        birth_date = st.date_input(f"اختر تاريخ ميلادك لـ {game_name}:", value=datetime(1990, 1, 1), key=f"b_{game_name}")
+    if st.button(f"🎲 توليد أرقام 2026 (عبر البرج الفلكي فقط) لـ {game_name}", key=f"btn_zodiac_{game_name}"):
+        st.session_state[zodiac_counter_key] += 1
         
-        birth_key = f"counter_b_{game_name}"
-        if birth_key not in st.session_state:
-            st.session_state[birth_key] = 0
-            
-        if st.button(f"🎲 توليد أرقام 2026 عبر (تاريخ الميلاد) لـ {game_name}", key=f"btn_b_{game_name}"):
-            st.session_state[birth_key] += 1
-            
-        if st.session_state[birth_key] > 0:
-            seed_b = total_rows + numeric_sum + birth_date.toordinal() + (st.session_state[birth_key] * 77) + int(datetime.now().strftime("%f"))
-            np.random.seed(seed_b)
-            
-            st.markdown(f"**✨ التوقع رقم ({st.session_state[birth_key]}) لتاريخ ميلادك لسحب اليوم 2026:**")
-            if not is_euro:
-                p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
-                p_super = int(np.random.randint(0, 10))
-                st.metric("أرقام اللوتو (تاريخ الميلاد)", str(p_nums))
-                st.metric("رقم Superzahl", str(p_super))
-            else:
-                p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
-                p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-                st.metric("الأرقام الرئيسية (تاريخ الميلاد)", str(p_nums))
-                st.metric("أرقام النجوم (Sternzahl)", str(p_stars))
+    if st.session_state[zodiac_counter_key] > 0:
+        seed_zodiac = total_rows + numeric_sum + hash(zodiac) + (st.session_state[zodiac_counter_key] * 111)
+        np.random.seed(seed_zodiac)
+        
+        st.success(f"✨ نتيجة توليد الأبراج لبرج {zodiac.split()[0]} (التوقع رقم {st.session_state[zodiac_counter_key]}):")
+        if not is_euro:
+            p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+            p_super = int(np.random.randint(0, 10))
+            st.metric("أرقام اللوتو (البرج الفلكي)", str(p_nums))
+            st.metric("رقم Superzahl", str(p_super))
         else:
-            st.info("👆 اضغط على زر توليد تاريخ الميلاد للحصول على النتيجة.")
+            p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
+            p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
+            st.metric("الأرقام الرئيسية (البرج الفلكي)", str(p_nums))
+            st.metric("أرقام النجوم (Sternzahl)", str(p_stars))
 
 with tab1:
-    run_independent_tabs(df_lotto, "اللوتو (Lotto)", files_lotto, False)
+    run_fully_independent_tabs(df_lotto, "اللوتو (Lotto)", files_lotto, False)
 
 with tab2:
-    run_independent_tabs(df_euro, "يوروجاكبوت (Eurojackpot)", files_euro, True)
+    run_fully_independent_tabs(df_euro, "يوروجاكبوت (Eurojackpot)", files_euro, True)
+
