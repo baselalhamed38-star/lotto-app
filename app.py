@@ -1,3 +1,17 @@
+import subprocess
+import sys
+
+# إجبار السيرفر على تثبيت مكتبات قراءة ملفات الإكسل تلقائياً إذا لم تكن موجودة
+try:
+    import openpyxl
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "openpyxl"])
+
+try:
+    import xlrd
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "xlrd"])
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -16,16 +30,20 @@ def load_files_safely(uploaded_files):
     for file in uploaded_files:
         filename = file.name.lower()
         try:
-            if filename.endswith('.csv'):
+            if filename.endswith(('.xlsx', '.xls')):
+                # قراءة جميع الصفحات (Sheets) داخل ملف الإكسل
+                xls = pd.ExcelFile(file)
+                for sheet in xls.sheet_names:
+                    df = pd.read_excel(xls, sheet_name=sheet, header=None)
+                    if not df.empty:
+                        df['File_Sheet'] = f"{file.name} - ({sheet})"
+                        all_data.append(df)
+            elif filename.endswith('.csv'):
                 df = pd.read_csv(file, header=None, encoding='utf-8', errors='ignore')
                 df['File_Sheet'] = file.name
                 all_data.append(df)
-            else:
-                df = pd.read_excel(file, header=None)
-                df['File_Sheet'] = file.name
-                all_data.append(df)
         except Exception as e:
-            st.warning(f"تنبيه في الملف {file.name}: تأكد من حفظه بصيغة CSV لضمان قراءته بسلاسة.")
+            st.error(f"❌ حدث خطأ أثناء قراءة الملف {file.name}: {e}")
             
     if all_data:
         return pd.concat(all_data, ignore_index=True)
@@ -72,7 +90,6 @@ def parse_draws(df):
     return pd.DataFrame(extracted)
 
 st.sidebar.header("📂 رفع الملفات الرسمية")
-st.sidebar.info("💡 نصيحة: لحل مشاكل التوافق، يُفضل حفظ الملف بصيغة CSV ورفعه.")
 l_files = st.sidebar.file_uploader("ملفات اللوتو (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="lf")
 e_files = st.sidebar.file_uploader("ملفات Eurojackpot (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="ef")
 
@@ -88,16 +105,16 @@ def run_tab(df, name, is_euro=False):
     st.subheader(f"البحث في سحوبات وقاعدة بيانات {name}")
     
     if df.empty:
-        st.warning(f"⚠️ يرجى رفع ملفات {name} من القائمة الجانبية (يُفضل صيغة CSV لضمان السرعة).")
+        st.info(f"💡 يرجى رفع ملفات {name} من القائمة الجانبية لعرض السحوبات.")
         return
         
-    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب بنجاح!")
+    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب بنجاح من ملفات الإكسل/CSV!")
     
     with st.expander("👁️ عرض جدول السحوبات المستخرجة"):
         st.dataframe(df, use_container_width=True)
         
     st.markdown("---")
-    query = st.text_input(f"بحث عن تاريخ أو رقم في سحوبات {name} (مثال: 09.09 أو 2020):", key=f"q_{name}").strip()
+    query = st.text_input(f"🔍 بحث عن تاريخ أو رقم في سحوبات {name} (مثال: 09.09 أو 2020 أو 15):", key=f"q_{name}").strip()
     
     if query:
         res = df[df['date'].str.contains(query, case=False, na=False) | 
