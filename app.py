@@ -143,11 +143,13 @@ def load_game_files(game_type):
     all_files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx', '.xls', '.csv'))]
     matched_files = []
     for f in all_files:
-        if game_type == "lotto" and ("lotto" in f.lower() and "euro" not in f.lower()):
+        f_lower = f.lower()
+        if game_type == "lotto" and ("lotto" in f_lower):
             matched_files.append(f)
-        elif game_type == "euro" and ("euro" in f.lower() or "ej" in f.lower()):
+        elif game_type == "euro" and ("euro" in f_lower or "ej" in f_lower):
             matched_files.append(f)
             
+    # في حال لم يتم مطابقة ملفات مخصصة، نأخذ كل الملفات المتاحة كاحتياط
     if not matched_files:
         matched_files = all_files
         
@@ -155,12 +157,19 @@ def load_game_files(game_type):
     for file_name in matched_files:
         try:
             if file_name.endswith(('.xlsx', '.xls')):
-                xls = pd.ExcelFile(file_name)
-                for sheet_name in xls.sheet_names:
-                    df_sheet = pd.read_excel(xls, sheet_name=sheet_name, header=None)
-                    if not df_sheet.empty:
-                        df_sheet['Source_Info'] = f"File: {file_name} ➔ [Sheet: {sheet_name}]"
-                        all_draws.append(df_sheet)
+                try:
+                    xls = pd.ExcelFile(file_name)
+                    for sheet_name in xls.sheet_names:
+                        df_sheet = pd.read_excel(xls, sheet_name=sheet_name, header=None)
+                        if not df_sheet.empty:
+                            df_sheet['Source_Info'] = f"File: {file_name} ➔ [Sheet: {sheet_name}]"
+                            all_draws.append(df_sheet)
+                except Exception as ex_xls:
+                    # محاولة بديلة إذا كان الملف بصيغة قديمة تتطلب محركاً مختلفاً
+                    df_alt = pd.read_excel(file_name, header=None)
+                    if not df_alt.empty:
+                        df_alt['Source_Info'] = f"File: {file_name}"
+                        all_draws.append(df_alt)
             elif file_name.endswith('.csv'):
                 df_csv = pd.read_csv(file_name, header=None, encoding='utf-8', errors='ignore')
                 if not df_csv.empty:
