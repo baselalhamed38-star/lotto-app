@@ -59,36 +59,47 @@ def run_complete_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     numeric_sum = int(df.select_dtypes(include=[np.number]).sum().sum()) % 1000 if not df.select_dtypes(include=[np.number]).empty else 400
     
-    # ----------------- 1. قسم البحث عبر تحديد التاريخ -----------------
-    st.markdown("### 📅 البحث عن السحوبات القديمة عبر تحديد التاريخ")
-    st.markdown("اختر أي تاريخ للبحث عنه في أرشيف السحوبات وإظهار النتائج المطابقة:")
+    # ----------------- 1. البحث عبر اليوم والشهر فقط (بدون سنة) -----------------
+    st.markdown("### 📅 البحث في السحوبات القديمة عبر (اليوم والشهر فقط)")
+    st.markdown("اختر اليوم والشهر للبحث عن السحوبات التي جرت في هذا التاريخ عبر كل السنوات:")
     
-    selected_search_date = st.date_input(f"حدد التاريخ المطلوب لـ {game_name}:", value=datetime(2022, 1, 1), key=f"search_date_{game_name}")
-    date_str_dot = selected_search_date.strftime("%d.%m.%Y")
-    date_str_slash = selected_search_date.strftime("%Y/%m/%d")
-    date_str_hyphen = selected_search_date.strftime("%Y-%m-%d")
+    col_d, col_m = st.columns(2)
+    with col_d:
+        selected_day = st.selectbox(f"اختر اليوم ({game_name}):", list(range(1, 32)), key=f"sel_day_{game_name}")
+    with col_m:
+        months_dict = {
+            "يناير (1)": "01", "فبراير (2)": "02", "مارس (3)": "03", "أبريل (4)": "04",
+            "مايو (5)": "05", "يونيو (6)": "06", "يوليو (7)": "07", "أغسطس (8)": "08",
+            "سبتمبر (9)": "09", "أكتوبر (10)": "10", "نوفمبر (11)": "11", "ديسمبر (12)": "12"
+        }
+        selected_month_name = st.selectbox(f"اختر الشهر ({game_name}):", list(months_dict.keys()), key=f"sel_mon_{game_name}")
+        selected_month_num = months_dict[selected_month_name]
+        
+    day_str = f"{selected_day:02d}"
     
-    # البحث بالصيغ المختلفة للتاريخ داخل الأرشيف
-    mask = df.astype(str).apply(lambda x: x.str.contains(f"{selected_search_date.day}|{selected_search_date.month}|{selected_search_date.year}", case=False, na=False)).any(axis=1)
-    # تصفية أدق بالتاريخ إذا وجد تطابق مباشر
-    date_mask = df.astype(str).apply(lambda x: x.str.contains(date_str_dot, case=False, na=False) | 
-                                               x.str.contains(date_str_slash, case=False, na=False) | 
-                                               x.str.contains(date_str_hyphen, case=False, na=False)).any(axis=1)
+    # أنماط البحث المختلفة لتغطية جميع صيغ التواريخ في الملفات (مثل 01.01 أو 1/1 أو ما شابه)
+    pattern1 = f"{day_str}.{selected_month_num}."
+    pattern2 = f"{int(day_str)}/{int(selected_month_num)}/"
+    pattern3 = f"-{selected_month_num}-{day_str}"
     
-    res_date = df[date_mask]
+    mask_day_month = df.astype(str).apply(lambda x: x.str.contains(pattern1, case=False, na=False) |
+                                                   x.str.contains(pattern2, case=False, na=False) |
+                                                   x.str.contains(pattern3, case=False, na=False)).any(axis=1)
+    
+    res_date = df[mask_day_month]
     
     if not res_date.empty:
-        st.success(f"✅ تم العثور على **{len(res_date)}** سحب يطابق التاريخ المحدد ({date_str_dot}):")
+        st.success(f"✅ تم العثور على **{len(res_date)}** سحب مطابق لتاريخ ({day_str}/{selected_month_num}) عبر السنوات السابقة:")
         st.dataframe(res_date, use_container_width=True)
     else:
-        st.warning(f"⚠️ لم يتم العثور على سحب مسجل بالتاريخ الدقيق ({date_str_dot}). يمكنك استعراض كامل الأرشيف أدناه:")
+        st.warning(f"⚠️ لم يتم العثور على سحوبات مسجلة في التاريخ ({day_str}/{selected_month_num}) في الأرشيف المتاح.")
         
     with st.expander(f"👁️ استعراض كامل أرشيف سحوبات {game_name} ({total_rows} سحب)"):
         st.dataframe(df, use_container_width=True)
         
     st.markdown("---")
     
-    # ----------------- 2. نافذة تاريخ الميلاد (مستقلة لتوليد الأرقام) -----------------
+    # ----------------- 2. نافذة تاريخ الميلاد (توليد الأرقام) -----------------
     st.markdown("### 🎫 نافذة توليد أرقام 2026 عبر (تاريخ الميلاد)")
     birth_date = st.date_input(f"حدد تاريخ ميلادك لـ {game_name}:", value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
     
@@ -117,7 +128,7 @@ def run_complete_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # ----------------- 3. نافذة الأبراج الفلكية (مستقلة لتوليد الأرقام) -----------------
+    # ----------------- 3. نافذة الأبراج الفلكية (توليد الأرقام) -----------------
     st.markdown("### 🌟 نافذة توليد أرقام 2026 عبر (البرج الفلكي)")
     zodiac = st.selectbox(f"اختر برجك الفلكي لـ {game_name}:", 
                           ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
