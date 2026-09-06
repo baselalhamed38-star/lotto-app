@@ -48,7 +48,7 @@ df_euro, files_euro = load_game_files("euro")
 
 tab1, tab2 = st.tabs(["🍀 اللوتو (Lotto)", "💶 يوروجاكبوت (Eurojackpot)"])
 
-def run_pure_historical_tab(df, game_name, matched_files, is_euro=False):
+def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.subheader(f"📊 تحليل الأرشيف والسحوبات التاريخية لـ {game_name}")
     st.info(f"📁 الملفات المرتبطة: `{matched_files if matched_files else 'ملفات عامة'}`")
     
@@ -57,9 +57,11 @@ def run_pure_historical_tab(df, game_name, matched_files, is_euro=False):
         return
         
     total_rows = len(df)
+    numeric_vals = df.select_dtypes(include=[np.number])
+    matrix_sum = int(numeric_vals.sum().sum()) if not numeric_vals.empty else 12345
     
-    # ----------------- 1. البحث الدقيق باليوم والشهر فقط (تطابق تام بدون جلب الشهر كاملاً) -----------------
-    st.markdown("### 📅 البحث بدقة عن نفس اليوم والشهر عبر السنين")
+    # ----------------- 1. البحث الدقيق بنفس اليوم والشهر عبر السنين -----------------
+    st.markdown("### 📅 البحث الدقيق عن نفس اليوم والشهر عبر السنين")
     col_d, col_m = st.columns(2)
     with col_d:
         selected_day = st.selectbox(f"اختر اليوم ({game_name}):", list(range(1, 32)), key=f"p_day_{game_name}")
@@ -73,12 +75,11 @@ def run_pure_historical_tab(df, game_name, matched_files, is_euro=False):
         selected_month_num = months_dict[selected_month_name]
         
     day_str = f"{selected_day:02d}"
-    
-    # تحويل محتوى الجدول إلى نص للبحث عن الأنماط الدقيقة مثل 09-09 أو 09.09 أو 9/9
     df_str = df.astype(str)
-    pattern_dot = f".*{day_str}\\.{selected_month_num}.*"
-    pattern_slash = f".*{int(day_str)}/{int(selected_month_num)}/.*"
-    pattern_hyphen = f".*-{selected_month_num}-{day_str}.*"
+    
+    pattern_dot = f".*\\b{day_str}\\.{selected_month_num}\\b.*"
+    pattern_slash = f".*\\b{int(day_str)}/{int(selected_month_num)}/.*"
+    pattern_hyphen = f".*\\b-{selected_month_num}-{day_str}\\b.*"
     
     exact_date_mask = df_str.apply(lambda x: x.str.contains(pattern_dot, regex=True, case=False, na=False) |
                                                x.str.contains(pattern_slash, regex=True, case=False, na=False) |
@@ -87,51 +88,104 @@ def run_pure_historical_tab(df, game_name, matched_files, is_euro=False):
     res_date = df[exact_date_mask]
     
     if not res_date.empty:
-        st.success(f"✅ تم العثور على **{len(res_date)}** سحب وقع في نفس اليوم والشهر ({day_str}/{selected_month_num}) في السنوات السابقة:")
+        st.success(f"✅ تم العثور على **{len(res_date)}** سحب في نفس اليوم والشهر ({day_str}/{selected_month_num}) بالسنوات السابقة:")
         st.dataframe(res_date, use_container_width=True)
     else:
-        st.warning(f"⚠️ لم يتم العثور على سحوبات مسجلة في التاريخ ({day_str}/{selected_month_num}) ضمن الأرشيف الحالي.")
+        st.warning(f"⚠️ لم يتم العثور على سحوبات مطابقة تماماً لتاريخ ({day_str}/{selected_month_num}) في الأرشيف.")
         
     with st.expander(f"👁️ استعراض كامل أرشيف سحوبات {game_name} ({total_rows} سحب)"):
         st.dataframe(df, use_container_width=True)
         
     st.markdown("---")
     
-    # ----------------- 2. زر توليد الأرقام من تحليل السحوبات القديمة فقط -----------------
-    st.markdown("### 🎲 توليد الأرقام حصرياً من تحليل السحوبات التاريخية")
-    st.markdown("يعتمد هذا الزر على تحليل الأنماط الإحصائية والتكرارية للسحوبات السابقة فقط لتوليد توقعات سحب 2026:")
-    
+    # ----------------- 2. زر تحليل السحوبات التاريخية لتوليد التوقعات -----------------
+    st.markdown("### 🔍 تحليل السحوبات التاريخية وتوليد توقعات 2026")
     hist_counter_key = f"counter_hist_{game_name}"
     if hist_counter_key not in st.session_state:
         st.session_state[hist_counter_key] = 0
         
-    if st.button(f"🔍 تحليل السحوبات وتوليد توقعات 2026 لـ {game_name}", key=f"btn_hist_{game_name}"):
+    if st.button(f"📊 تحليل الأرشيف وتوليد توقعات 2026 لـ {game_name}", key=f"btn_hist_{game_name}"):
         st.session_state[hist_counter_key] += 1
         
     if st.session_state[hist_counter_key] > 0:
-        # استخراج خوارزمية تعتمد على السحوبات القديمة والوقت الحالي للتجديد
-        numeric_vals = df.select_dtypes(include=[np.number])
-        matrix_sum = int(numeric_vals.sum().sum()) if not numeric_vals.empty else 12345
-        computed_seed = total_rows + matrix_sum + (st.session_state[hist_counter_key] * 333) + int(datetime.now().strftime("%f"))
-        np.random.seed(computed_seed)
+        seed_hist = total_rows + matrix_sum + (st.session_state[hist_counter_key] * 444) + int(datetime.now().strftime("%f"))
+        np.random.seed(seed_hist)
         
-        st.success(f"✨ التوقع الإحصائي رقم ({st.session_state[hist_counter_key]}) مستخرج بالكامل من الأرشيف التاريخي:")
-        
+        st.success(f"✨ التوقع الإحصائي التاريخي رقم ({st.session_state[hist_counter_key]}):")
         if not is_euro:
             p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             p_super = int(np.random.randint(0, 10))
-            st.metric("🎫 الأرقام المقترحة من الأرشيف (اللوتو):", str(p_nums))
-            st.metric("🌟 رقم Superzahl المقترح:", str(p_super))
+            st.metric("أرقام اللوتو المقترحة من الأرشيف:", str(p_nums))
+            st.metric("رقم Superzahl:", str(p_super))
         else:
             p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
             p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-            st.metric("💶 الأرقام الرئيسية المقترحة من الأرشيف (Eurojackpot):", str(p_nums))
-            st.metric("⭐ أرقام النجوم (Sternzahl):", str(p_stars))
-    else:
-        st.info("👆 اضغط على زر تحليل السحوبات أعلاه لتوليد التوقعات المستندة للأرشيف القديم فقط.")
+            st.metric("الأرقام الرئيسية المقترحة من الأرشيف:", str(p_nums))
+            st.metric("أرقام النجوم (Sternzahl):", str(p_stars))
+            
+    st.markdown("---")
+    
+    # ----------------- 3. نافذة تاريخ الميلاد المستقلة -----------------
+    st.markdown("### 📅 نافذة تاريخ الميلاد المستقلة لتوليد الأرقام")
+    birth_date = st.date_input(f"حدد تاريخ ميلادك لـ {game_name}:", value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
+    
+    birth_counter_key = f"counter_birth_{game_name}"
+    if birth_counter_key not in st.session_state:
+        st.session_state[birth_counter_key] = 0
+        
+    if st.button(f"🎲 توليد أرقام 2026 عبر (تاريخ الميلاد) لـ {game_name}", key=f"btn_birth_{game_name}"):
+        st.session_state[birth_counter_key] += 1
+        
+    if st.session_state[birth_counter_key] > 0:
+        seed_birth = total_rows + matrix_sum + birth_date.toordinal() + (st.session_state[birth_counter_key] * 99)
+        np.random.seed(seed_birth)
+        
+        st.success(f"✨ نتيجة توليد تاريخ الميلاد (التوقع رقم {st.session_state[birth_counter_key]}):")
+        if not is_euro:
+            p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+            p_super = int(np.random.randint(0, 10))
+            st.metric("أرقام اللوتو (تاريخ الميلاد):", str(p_nums))
+            st.metric("رقم Superzahl:", str(p_super))
+        else:
+            p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
+            p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
+            st.metric("الأرقام الرئيسية (تاريخ الميلاد):", str(p_nums))
+            st.metric("أرقام النجوم (Sternzahl):", str(p_stars))
+            
+    st.markdown("---")
+    
+    # ----------------- 4. نافذة الأبراج الفلكية المستقلة -----------------
+    st.markdown("### 🌟 نافذة الأبراج الفلكية المستقلة لتوليد الأرقام")
+    zodiac = st.selectbox(f"اختر برجك الفلكي لـ {game_name}:", 
+                          ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
+                           "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", 
+                           "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"], key=f"z_select_{game_name}")
+    
+    zodiac_counter_key = f"counter_zodiac_{game_name}"
+    if zodiac_counter_key not in st.session_state:
+        st.session_state[zodiac_counter_key] = 0
+        
+    if st.button(f"🎲 توليد أرقام 2026 عبر (البرج الفلكي) لـ {game_name}", key=f"btn_zodiac_{game_name}"):
+        st.session_state[zodiac_counter_key] += 1
+        
+    if st.session_state[zodiac_counter_key] > 0:
+        seed_zodiac = total_rows + matrix_sum + hash(zodiac) + (st.session_state[zodiac_counter_key] * 111)
+        np.random.seed(seed_zodiac)
+        
+        st.success(f"✨ نتيجة توليد الأبراج لبرج {zodiac.split()[0]} (التوقع رقم {st.session_state[zodiac_counter_key]}):")
+        if not is_euro:
+            p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+            p_super = int(np.random.randint(0, 10))
+            st.metric("أرقام اللوتو (البرج الفلكي):", str(p_nums))
+            st.metric("رقم Superzahl:", str(p_super))
+        else:
+            p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
+            p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
+            st.metric("الأرقام الرئيسية (البرج الفلكي):", str(p_nums))
+            st.metric("أرقام النجوم (Sternzahl):", str(p_stars))
 
 with tab1:
-    run_pure_historical_tab(df_lotto, "اللوتو (Lotto)", files_lotto, False)
+    run_full_features_tab(df_lotto, "اللوتو (Lotto)", files_lotto, False)
 
 with tab2:
-    run_pure_historical_tab(df_euro, "يوروجاكبوت (Eurojackpot)", files_euro, True)
+    run_full_features_tab(df_euro, "يوروجاكبوت (Eurojackpot)", files_euro, True)
