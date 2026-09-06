@@ -8,14 +8,13 @@ st.set_page_config(page_title="نظام تحليل سحوبات اللوتو", p
 
 st.title("🎯 النظام المباشر لتحليل والبحث في سحوبات اللوتو و Eurojackpot")
 
-# البحث التلقائي عن أي ملف إكسل موجود في المستودع
 @st.cache_data
 def load_embedded_excel():
-    excel_files = [f for f in os.listdir('.') if f.endswith(('.xlsx', '.xls'))]
+    # البحث عن أي ملف إكسل في المجلد الحالي
+    excel_files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx', '.xls'))]
     if not excel_files:
-        return pd.DataFrame(), "لا يوجد ملف إكسل في المستودع"
+        return pd.DataFrame(), "لا يوجد ملف إكسل"
     
-    # اختيار أول ملف إكسل يتم العثور عليه تلقائياً
     file_name = excel_files[0]
     all_draws = []
     try:
@@ -40,7 +39,7 @@ def run_game_tab(df, name, is_euro=False):
     st.subheader(f"البحث الشامل في جميع شيتات وقواعد بيانات {name}")
     
     if df.empty:
-        st.error(f"⚠️ تنبيه: لم يتم العثور على ملف إكسل في مستودع GitHub. يرجى رفع ملف الإكسل الخاص بـ {name} إلى مستودع المشروع مباشرة بجانب ملف app.py ليتم قراءته تلقائياً.")
+        st.error(f"⚠️ تنبيه: تأكد من وجود ملف الإكسل في مستودع GitHub (الملف الظاهر في صورتك هو LOTTO6aus49_2021.xlsx ولكنه قد يحتاج لثوانٍ حتى يتم تحديث السيرفر).")
         return
         
     st.success(f"✅ تم تحميل وقراءة جميع الشيتات بنجاح من الملف: `{loaded_filename}`")
