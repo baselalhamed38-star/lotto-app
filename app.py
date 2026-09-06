@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import io
 
 st.set_page_config(page_title="نظام تحليل سحوبات اللوتو", page_icon="🎯", layout="wide")
 
@@ -17,19 +16,16 @@ def load_files_safely(uploaded_files):
     for file in uploaded_files:
         filename = file.name.lower()
         try:
-            # قراءة الملف كـ CSV أو نص إذا تعذر إكسل، أو محاولة قراءة إكسل بدون فتح أوبن بايثكسل إن أمكن
             if filename.endswith('.csv'):
                 df = pd.read_csv(file, header=None, encoding='utf-8', errors='ignore')
                 df['File_Sheet'] = file.name
                 all_data.append(df)
             else:
-                # محاولة قراءة الإكسل باستخدام محرك بايثون القياسي أو البandas المباشر
                 df = pd.read_excel(file, header=None)
                 df['File_Sheet'] = file.name
                 all_data.append(df)
         except Exception as e:
-            # حل بديل جذري: قراءة ملف الإكسل كملف نصي أو تخطي الخطأ لتجنب التوقف
-            st.warning(f"ملاحظة في الملف {file.name}: تأكد من حفظه بصيغة CSV لضمان قراءته بسلاسة.")
+            st.warning(f"تنبيه في الملف {file.name}: تأكد من حفظه بصيغة CSV لضمان قراءته بسلاسة.")
             
     if all_data:
         return pd.concat(all_data, ignore_index=True)
@@ -76,12 +72,15 @@ def parse_draws(df):
     return pd.DataFrame(extracted)
 
 st.sidebar.header("📂 رفع الملفات الرسمية")
-st.sidebar.info("💡 نصيحة: لحل مشاكل التوافق، يُفضل حفظ ملفات الإكسل بصيغة **CSV (Comma Delimited)** ورفعها.")
+st.sidebar.info("💡 نصيحة: لحل مشاكل التوافق، يُفضل حفظ الملف بصيغة CSV ورفعه.")
 l_files = st.sidebar.file_uploader("ملفات اللوتو (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="lf")
 e_files = st.sidebar.file_uploader("ملفات Eurojackpot (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="ef")
 
-df_lotto = parse_draws(load_files_safely(l_files))
-df_euro = parse_draws(load_files(load_files_safely(e_files)))
+raw_lotto = load_files_safely(l_files)
+raw_euro = load_files_safely(e_files)
+
+df_lotto = parse_draws(raw_lotto)
+df_euro = parse_draws(raw_euro)
 
 tab1, tab2 = st.tabs(["🍀 اللوتو (Lotto)", "💶 يوروجاكبوت (Eurojackpot)"])
 
@@ -89,7 +88,7 @@ def run_tab(df, name, is_euro=False):
     st.subheader(f"البحث في سحوبات وقاعدة بيانات {name}")
     
     if df.empty:
-        st.warning(f"⚠️ يرجى رفع ملفات {name} من القائمة الجانبية (يُفضل صيغة CSV إذا ظهر خطأ في الإكسل).")
+        st.warning(f"⚠️ يرجى رفع ملفات {name} من القائمة الجانبية (يُفضل صيغة CSV لضمان السرعة).")
         return
         
     st.success(f"✅ تم تحميل وقراءة {len(df)} سحب بنجاح!")
