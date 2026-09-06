@@ -183,8 +183,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         return
         
     total_rows = len(df)
-    numeric_vals = df.select_dtypes(include=[np.number])
-    matrix_sum = int(numeric_vals.sum().sum()) if not numeric_vals.empty else 12345
     
     # بطاقة إحصائية جذابة
     st.markdown(f"""
@@ -243,7 +241,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[hist_counter_key] += 1
         
     if st.session_state[hist_counter_key] > 0:
-        seed_hist = total_rows + matrix_sum + (st.session_state[hist_counter_key] * 444) + int(datetime.now().strftime("%f"))
+        seed_hist = abs(total_rows + (st.session_state[hist_counter_key] * 444)) % (2**31 - 1)
         np.random.seed(seed_hist)
         
         st.success(f"✨ Prediction #{st.session_state[hist_counter_key]} (Historical Analysis):")
@@ -274,7 +272,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[birth_counter_key] += 1
         
     if st.session_state[birth_counter_key] > 0:
-        seed_birth = total_rows + matrix_sum + birth_date.toordinal() + (st.session_state[birth_counter_key] * 99)
+        seed_birth = abs(birth_date.toordinal() + (st.session_state[birth_counter_key] * 99)) % (2**31 - 1)
         np.random.seed(seed_birth)
         
         st.success(f"✨ Birthdate Prediction #{st.session_state[birth_counter_key]}:")
@@ -295,10 +293,12 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     
     # ----------------- 4. نافذة الأبراج الفلكية المستقلة -----------------
     st.markdown(f"### {t['zodiac_title']}")
-    zodiac = st.selectbox(t["zodiac_select"], 
-                          ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
-                           "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", 
-                           "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"], key=f"z_select_{game_name}")
+    zodiac_list = [
+        "الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
+        "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", 
+        "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"
+    ]
+    zodiac = st.selectbox(t["zodiac_select"], zodiac_list, key=f"z_select_{game_name}")
     
     zodiac_counter_key = f"counter_zodiac_{game_name}"
     if zodiac_counter_key not in st.session_state:
@@ -308,7 +308,8 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[zodiac_counter_key] += 1
         
     if st.session_state[zodiac_counter_key] > 0:
-        seed_zodiac = total_rows + matrix_sum + hash(zodiac) + (st.session_state[zodiac_counter_key] * 111)
+        zodiac_index = zodiac_list.index(zodiac) + 1
+        seed_zodiac = abs((zodiac_index * 1000) + (st.session_state[zodiac_counter_key] * 111)) % (2**31 - 1)
         np.random.seed(seed_zodiac)
         
         st.success(f"✨ Zodiac Prediction #{st.session_state[zodiac_counter_key]} ({zodiac.split()[0]}):")
