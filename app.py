@@ -8,7 +8,7 @@ st.set_page_config(page_title="نظام تحليل سحوبات اللوتو", p
 st.title("🎯 النظام المباشر لتحليل والبحث في سحوبات اللوتو و Eurojackpot")
 
 @st.cache_data
-def load_excel_safely(uploaded_files):
+def load_raw_excel(uploaded_files):
     if not uploaded_files:
         return pd.DataFrame()
     
@@ -17,16 +17,18 @@ def load_excel_safely(uploaded_files):
         filename = file.name.lower()
         try:
             if filename.endswith(('.xlsx', '.xls')):
-                # قراءة جميع أوراق العمل (Sheets) في ملف الإكسل
                 xls = pd.ExcelFile(file)
                 for sheet_name in xls.sheet_names:
                     df = pd.read_excel(xls, sheet_name=sheet_name, header=None)
                     if not df.empty:
-                        df['File_Sheet'] = f"{file.name} [{sheet_name}]"
+                        # تنظيف الأعمدة وتحويلها لنصوص لتسهيل البحث
+                        df = df.dropna(how='all')
+                        df['المصدر'] = f"{file.name} [{sheet_name}]"
                         all_data.append(df)
             elif filename.endswith('.csv'):
                 df = pd.read_csv(file, header=None, encoding='utf-8', errors='ignore')
-                df['File_Sheet'] = file.name
+                df = df.dropna(how='all')
+                df['المصدر'] = file.name
                 all_data.append(df)
         except Exception as e:
             st.error(f"❌ تعذر قراءة الملف {file.name}: {e}")
@@ -35,86 +37,43 @@ def load_excel_safely(uploaded_files):
         return pd.concat(all_data, ignore_index=True)
     return pd.DataFrame()
 
-def parse_draws(df):
-    if df.empty:
-        return pd.DataFrame()
-    
-    extracted = []
-    for _, row in df.iterrows():
-        vals = row.astype(str).values
-        src = row.get('File_Sheet', 'ملف')
-        date_val = None
-        date_pos = -1
-        
-        for idx, val in enumerate(vals):
-            v = val.strip()
-            if '.' in v and len(v) <= 12 and any(c.isdigit() for c in v):
-                parts = v.split('.')
-                if len(parts) >= 2 and parts[0].isdigit():
-                    date_val = v
-                    date_pos = idx
-                    break
-        
-        if date_val and date_pos != -1:
-            nums = []
-            for i in range(date_pos + 1, len(vals)):
-                cell = vals[i].strip().replace('.0', '')
-                if cell.isdigit() and len(cell) <= 2:
-                    nums.append(cell)
-            
-            if len(nums) >= 5:
-                main_ns = ", ".join(nums[:6] if len(nums) >= 6 else nums[:5])
-                extra_n = nums[6] if len(nums) >= 7 else (nums[5] if len(nums) == 6 else nums[-1])
-                
-                extracted.append({
-                    'source': src,
-                    'date': date_val,
-                    'numbers': main_ns,
-                    'extra': extra_n
-                })
-                
-    return pd.DataFrame(extracted)
-
 st.sidebar.header("📂 رفع ملفات الإكسل الرسمية")
-st.sidebar.info("💡 يمكنك الآن رفع ملفات الإكسل (.xlsx, .xls) أو CSV مباشرة بكل سهولة.")
+st.sidebar.info("💡 ارفع ملف الإكسل الخاص بك وسيقوم النظام بقراءته وعرضه فوراً.")
 
 l_files = st.sidebar.file_uploader("ملفات اللوتو (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="lf")
 e_files = st.sidebar.file_uploader("ملفات Eurojackpot (Excel / CSV):", type=["xlsx", "xls", "csv"], accept_multiple_files=True, key="ef")
 
-df_lotto = parse_draws(load_excel_safely(l_files))
-df_euro = parse_draws(load_excel_safely(e_files))
+df_lotto = load_raw_excel(l_files)
+df_euro = load_raw_excel(e_files)
 
 tab1, tab2 = st.tabs(["🍀 اللوتو (Lotto)", "💶 يوروجاكبوت (Eurojackpot)"])
 
 def run_tab(df, name, is_euro=False):
-    st.subheader(f"البحث في سحوبات وقاعدة بيانات {name}")
+    st.subheader(f"البحث المباشر في قاعدة بيانات {name}")
     
     if df.empty:
-        st.info(f"💡 يرجى رفع ملفات الإكسل الخاصة بـ {name} من القائمة الجانبية.")
+        st.info(f"💡 يرجى رفع ملف الإكسل الخاص بـ {name} من القائمة الجانبية في الأعلى.")
         return
         
-    st.success(f"✅ تم تحميل وقراءة {len(df)} سحب من ملفات الإكسل بنجاح!")
+    st.success(f"✅ تم رفع وقراءة ملف {name} بنجاح!")
     
-    with st.expander("👁️ عرض جدول السحوبات المستخرجة"):
+    with st.expander("👁️ عرض محتوى الملف كاملاً"):
         st.dataframe(df, use_container_width=True)
         
     st.markdown("---")
-    query = st.text_input(f"🔍 بحث عن تاريخ أو رقم في سحوبات {name} (مثال: 09.09 أو 2020):", key=f"q_{name}").strip()
+    query = st.text_input(f"🔍 ابحث عن أي رقم، تاريخ، أو كلمة داخل ملفات {name}:", key=f"q_{name}").strip()
     
     if query:
-        res = df[df['date'].str.contains(query, case=False, na=False) | 
-                 df['numbers'].str.contains(query, case=False, na=False) | 
-                 df['source'].str.contains(query, case=False, na=False)]
-        st.info(f"النتائج المطابقة: **{len(res)}** نتيجة")
+        # البحث في جميع أعمدة الجدول دفعة واحدة
+        mask = df.astype(str).apply(lambda x: x.str.contains(query, case=False, na=False)).any(axis=1)
+        res = df[mask]
+        
+        st.info(f"النتائج المطابقة لبحثك: **{len(res)}** صف")
         
         if not res.empty:
-            for _, r in res.iterrows():
-                if not is_euro:
-                    st.success(f"📂 **المصدر:** `{r['source']}` | 📅 **التاريخ:** `{r['date']}` \n\n 🔢 **الأرقام:** `{r['numbers']}` \n\n 🌟 **Superzahl:** `{r['extra']}`")
-                else:
-                    st.success(f"📂 **المصدر:** `{r['source']}` | 📅 **التاريخ:** `{r['date']}` \n\n 💶 **الأرقام:** `{r['numbers']}` \n\n ⭐ **Sternzahl:** `{r['extra']}`")
+            st.dataframe(res, use_container_width=True)
         else:
-            st.warning("⚠️ لا توجد نتائج مطابقة لبحثك.")
+            st.warning("⚠️ لا توجد نتائج مطابقة لبحثك في هذا الملف.")
             
     st.markdown("---")
     st.markdown(f"### 🔮 توليد احتمالات عام 2026 لـ {name}")
