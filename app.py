@@ -5,7 +5,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="نظام تحليل وتوقع سحوبات اللوتو و Eurojackpot", page_icon="🎰", layout="wide")
 
-# دالة ذكية جداً لقراءة ملفات Excel / CSV / JSON واستخراج الأعمدة بصورة آلية
+# دالة ذكية جداً لقراءة ملفات Excel / CSV / JSON واجتياز كل النوافذ (Sheets)
 @st.cache_data
 def load_uploaded_file(uploaded_file):
     if uploaded_file is not None:
@@ -31,11 +31,10 @@ def load_uploaded_file(uploaded_file):
             return pd.DataFrame(), False
     return pd.DataFrame(), False
 
-# دالة لاستخراج الشهر واليوم بدقة من أي نوع بيانات (سواء نص أو تاريخ اكسل رقمي)
+# دالة لاستخراج الشهر واليوم بدقة من أي نوع بيانات
 def smart_extract_month_day(val):
     if pd.isna(val):
         return ""
-    # لو كان تاريخ اكسل رقمي أو تاريخ صريح
     if isinstance(val, (int, float)):
         try:
             dt = pd.to_datetime(val, unit='d', origin='1899-12-30', errors='coerce')
@@ -61,11 +60,11 @@ st.sidebar.header("📂 إدارة ملفات السحوبات")
 lotto_file = st.sidebar.file_uploader("رفع ملف سحوبات (Lotto):", type=["json", "csv", "xlsx", "xls"], key="lotto")
 euro_file = st.sidebar.file_uploader("رفع ملف سحوبات (Eurojackpot):", type=["json", "csv", "xlsx", "xls"], key="euro")
 
-# تحميل اللوتو مع بيانات افتراضية في حال عدم الرفع
+# تحميل اللوتو
 raw_lotto, lotto_ok = load_uploaded_file(lotto_file)
 if lotto_ok:
     df_lotto = raw_lotto
-    st.sidebar.success(<text>✅ تم رفع ملف اللوتو ({len(df_lotto)} سحب)</text>)
+    st.sidebar.success(f"✅ تم رفع ملف اللوتو ({len(df_lotto)} سحب)")
 else:
     df_lotto = pd.DataFrame([
         {"full_date": "1955-09-09", "numbers": "5, 12, 23, 34, 42, 15"},
@@ -76,7 +75,7 @@ else:
     if lotto_file is not None:
         st.sidebar.warning("⚠️ تعذر قراءة ملف اللوتو، يتم استخدام البيانات الافتراضية.")
 
-# تحميل اليوروجاكبوت مع بيانات افتراضية في حال عدم الرفع
+# تحميل اليوروجاكبوت
 raw_euro, euro_ok = load_uploaded_file(euro_file)
 if euro_ok:
     df_euro = raw_euro
@@ -100,7 +99,6 @@ main_tab1, main_tab2, main_tab3, main_tab4 = st.tabs([
 with main_tab1:
     st.subheader("🎯 البحث والتحليل في سحوبات اللوتو")
     
-    # التعرف التلقائي الذكي على أعمدة التاريخ والأرقام
     date_col = next((col for col in df_lotto.columns if any(k in str(col).lower() for k in ['date', 'تاريخ', 'time', 'day'])), df_lotto.columns[0])
     num_col = next((col for col in df_lotto.columns if any(k in str(col).lower() for k in ['num', 'result', 'رقم', 'ارقام', 'draw', 'balls'])), df_lotto.columns[1] if len(df_lotto.columns) > 1 else df_lotto.columns[0])
 
@@ -149,7 +147,6 @@ with main_tab1:
 with main_tab2:
     st.subheader("💶 البحث والتحليل في سحوبات Eurojackpot")
     
-    # التعرف التلقائي على الأعمدة بمرونة عالية للملفات المرفوعة
     edate_col = next((col for col in df_euro.columns if any(k in str(col).lower() for k in ['date', 'تاريخ', 'time', 'day'])), df_euro.columns[0])
     enum_col = next((col for col in df_euro.columns if any(k in str(col).lower() for k in ['num', 'result', 'رقم', 'ارقام', 'draw', 'balls'])), df_euro.columns[1] if len(df_euro.columns) > 1 else df_euro.columns[0])
 
