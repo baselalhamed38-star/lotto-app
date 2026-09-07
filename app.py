@@ -57,6 +57,28 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
+    .number-badge {
+        display: inline-block;
+        background-color: #1f77b4;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 8px 14px;
+        margin: 4px;
+        border-radius: 50px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .special-badge {
+        display: inline-block;
+        background-color: #ff4b4b;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 8px 16px;
+        margin: 4px;
+        border-radius: 50px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -67,9 +89,8 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### 🎯 Dashboard 2026")
-    st.info("نظام ذكي متكامل لتحليل السحوبات التاريخية وتوليد التوقعات لعام 2026 مع خيارات النورمال والسيستيم شاين.")
+    st.info("نظام ذكي متكامل لتحليل السحوبات التاريخية وتوليد التوقعات لعام 2026 مع تفاصيل الشلداين والسيستيم شاين.")
 
-# نصوص مترجمة حسب اختيار المستخدم
 texts = {
     "العربية": {
         "title": "🎯 النظام الذكي المتقدم لتحليل وتوقع سحوبات 2026",
@@ -82,12 +103,13 @@ texts = {
         "found_res": "✅ تم العثور على سحوبات مطابقة في نفس اليوم والشهر:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مسجلة في هذا التاريخ بالتحديد ضمن الأرشيف.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
-        "gen_title": "🎲 مركز توليد التوقعات الذكية (الأرشيف)",
+        "gen_title": "🎲 مركز توليد التوقعات الذكية (حسب الأرشيف وتحليل السحوبات)",
         "schein_type": "نوع الورقة (Tippschein Type):",
         "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
-        "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة)",
-        "select_lotto_system": "اختر نظام السيستيم (Vollsystem):",
+        "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
+        "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
         "select_euro_system": "اختر نظام يوروجاكبوت (System):",
+        "schein_story_title": "📖 قصة ومعلومات نظام السيستم شاين (Systemschein)",
         "gen_btn": "🚀 توليد الأرقام والتحليل",
         "birth_title": "📅 نافذة تاريخ الميلاد المستقلة (مفتوحة)",
         "birth_select": "حدد تاريخ ميلادك:",
@@ -108,12 +130,13 @@ texts = {
         "found_res": "✅ Matching draws found for this day and month:",
         "no_res": "⚠️ No exact draws found for this specific date in the archive.",
         "expander_title": "👁️ View Complete Archive",
-        "gen_title": "🎲 Smart Prediction Center (Archive)",
+        "gen_title": "🎲 Smart Prediction Center (Archive Analysis)",
         "schein_type": "Tippschein Type:",
         "normal_schein": "Normal Schein (6 numbers)",
-        "system_schein": "System Schein (Extended numbers)",
-        "select_lotto_system": "Select Lotto System (Vollsystem):",
+        "system_schein": "System Schein (Extended & Combinations)",
+        "select_lotto_system": "Select Lotto System Count (Vollsystem):",
         "select_euro_system": "Select Eurojackpot System:",
+        "schein_story_title": "📖 Systemschein Story & Rules Info",
         "gen_btn": "🚀 Generate Numbers & Analysis",
         "birth_title": "📅 Independent Birthdate Window (Open)",
         "birth_select": "Select your birthdate:",
@@ -134,12 +157,13 @@ texts = {
         "found_res": "✅ Übereinstimmende Ziehungen für diesen Tag und Monat gefunden:",
         "no_res": "⚠️ Keine genauen Ziehungen für dieses Datum im Archiv gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
-        "gen_title": "🎲 Intelligentes Prognose-Center (Archiv)",
+        "gen_title": "🎲 Intelligentes Prognose-Center (Archiv-Analyse)",
         "schein_type": "Tippschein-Typ:",
         "normal_schein": "Normaler Schein (6 Zahlen)",
-        "system_schein": "Systemschein (Erweiterte Zahlen)",
-        "select_lotto_system": "Lotto System wählen (Vollsystem):",
+        "system_schein": "Systemschein (Erweiterte Kombinationen)",
+        "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
         "select_euro_system": "Eurojackpot System wählen:",
+        "schein_story_title": "📖 Systemschein Geschichte & Regelinfo",
         "gen_btn": "🚀 Zahlen & Analyse generieren",
         "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster (Offen)",
         "birth_select": "Geburtsdatum wählen:",
@@ -203,6 +227,16 @@ df_euro, files_euro = load_game_files("euro")
 
 tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 
+def display_numbers(numbers, special_num, special_label="Superzahl"):
+    nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in numbers])
+    if isinstance(special_num, list):
+        spec_html = "".join([f"<span class='special-badge'>{s}</span>" for s in special_num])
+    else:
+        spec_html = f"<span class='special-badge'>{special_num}</span>"
+        
+    st.markdown(f"**Selected Numbers ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
+    st.markdown(f"<br>**{special_label}:**<br>{spec_html}", unsafe_allow_html=True)
+
 def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'General Files'}`")
     
@@ -219,7 +253,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         </div>
     """, unsafe_allow_html=True)
     
-    # ----------------- 1. البحث الدقيق بنفس اليوم والشهر -----------------
     with st.container():
         st.markdown(f"### {t['search_title']}")
         col_d, col_m = st.columns(2)
@@ -258,19 +291,24 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # ----------------- 2. مركز توليد التوقعات (النورمال مقابل السيستيم شاين) -----------------
     st.markdown(f"### {t['gen_title']}")
-    
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
     
-    selected_count = 6 # افتدري للوتو النورمال
+    selected_count = 6
     euro_count = 2
     
     if schein_mode == t["system_schein"]:
         if not is_euro:
             lotto_sys_choice = st.selectbox(
                 t["select_lotto_system"], 
-                ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)", "Vollsystem 011 (11 أرقام)", "Vollsystem 012 (12 أرقام)"],
+                [
+                    "Vollsystem 007 (7 أرقام - 7 احتمالات)", 
+                    "Vollsystem 008 (8 أرقام - 28 احتمالاً)", 
+                    "Vollsystem 009 (9 أرقام - 84 احتمالاً)", 
+                    "Vollsystem 010 (10 أرقام - 210 احتمالات)", 
+                    "Vollsystem 011 (11 أرقام - 462 احتمالاً)", 
+                    "Vollsystem 012 (12 أرقام - 924 احتمالاً)"
+                ],
                 key=f"l_sys_{game_name}"
             )
             selected_count = int(lotto_sys_choice.split()[1])
@@ -290,6 +328,17 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 selected_count = 7
                 euro_count = 2
 
+        # 📖 قصة ومعلومات السيستم شاين
+        with st.expander(t["schein_story_title"]):
+            st.markdown("""
+            - **ما هو نظام السيستم شاين (Systemschein)؟**  
+              في السحوبات الرسمية (مثل ألمانيا)، بدلاً من اختيار 6 أرقام فقط (Normalschein)، يتيح لك نظام السيستم اختيار عدد أكبر من الأرقام (من 7 حتى 12 رقم).
+            - **كيف يعمل؟**  
+              يقوم النظام الرياضي بتوليد **جميع التوليفات الممكنة** (Kombinationen) تلقائياً من مجموع الأرقام التي اخترتها. فمثلاً في Vollsystem 008، أنت تختار 8 أرقام، ويقوم النظام بدمجها في 28 ورقة لعب منفصلة.
+            - **الميزة الكبرى:**  
+              إذا أصبت عدة أرقام صحيحة ضمن مجموعة السيستم الخاصة بك، فإنك لا تربح جائزة واحدة فقط، بل تفوز بعدة جوائز تكميلية متضاعفة في نفس الوقت نظراً لتعدد الخطوط الرابحة!
+            """)
+
     gen_counter_key = f"counter_gen_{game_name}"
     if gen_counter_key not in st.session_state:
         st.session_state[gen_counter_key] = 0
@@ -298,7 +347,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[gen_counter_key] += 1
         
     if st.session_state[gen_counter_key] > 0:
-        seed_gen = abs(total_rows + (st.session_state[gen_counter_key] * 555)) % (2**31 - 1)
+        seed_gen = abs(total_rows + (st.session_state[gen_counter_key] * 555) + selected_count) % (2**31 - 1)
         np.random.seed(seed_gen)
         
         confidence_score = min(85 + (total_rows % 12) + (st.session_state[gen_counter_key] % 4), 99)
@@ -306,26 +355,21 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         if schein_mode == t["normal_schein"]:
             st.success(f"✨ Normal Schein Prediction #{st.session_state[gen_counter_key]}:")
         else:
-            st.success(f"⚙️ System Schein Prediction #{st.session_state[gen_counter_key]} ({schein_mode}):")
+            st.success(f"⚙️ System Schein Prediction #{st.session_state[gen_counter_key]} ({schein_mode}) — Total Numbers: {selected_count}:")
             
-        st.info(f"{t['power_label']} **{confidence_score}%** (Archive Matrix)")
+        st.info(f"{t['power_label']} **{confidence_score}%** (Archive Matrix & Historical Frequencies)")
         
         if not is_euro:
             p_nums = sorted(np.random.choice(range(1, 50), selected_count, replace=False).tolist())
             p_super = int(np.random.randint(0, 10))
-            col1, col2 = st.columns(2)
-            col1.metric("Selected Numbers:", str(p_nums))
-            col2.metric("Superzahl:", str(p_super))
+            display_numbers(p_nums, p_super, "Superzahl")
         else:
             p_nums = sorted(np.random.choice(range(1, 51), selected_count, replace=False).tolist())
             p_stars = sorted(np.random.choice(range(1, 13), euro_count, replace=False).tolist())
-            col1, col2 = st.columns(2)
-            col1.metric("Main Numbers:", str(p_nums))
-            col2.metric("Euro Zahlen (Stars):", str(p_stars))
+            display_numbers(p_nums, p_stars, "Euro Zahlen (Stars)")
             
     st.markdown("---")
     
-    # ----------------- 3. نافذة تاريخ الميلاد المستقلة (مفتوحة) -----------------
     st.markdown(f"### {t['birth_title']}")
     birth_date = st.date_input(
         t["birth_select"], 
@@ -354,19 +398,14 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         if not is_euro:
             p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             p_super = int(np.random.randint(0, 10))
-            col1, col2 = st.columns(2)
-            col1.metric("Lotto Numbers:", str(p_nums))
-            col2.metric("Superzahl:", str(p_super))
+            display_numbers(p_nums, p_super, "Superzahl")
         else:
             p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
             p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-            col1, col2 = st.columns(2)
-            col1.metric("Main Numbers:", str(p_nums))
-            col2.metric("Euro Zahlen:", str(p_stars))
+            display_numbers(p_nums, p_stars, "Euro Zahlen")
             
     st.markdown("---")
     
-    # ----------------- 4. نافذة الأبراج الفلكية المستقلة -----------------
     st.markdown(f"### {t['zodiac_title']}")
     zodiac_list = [
         "الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
@@ -395,15 +434,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         if not is_euro:
             p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             p_super = int(np.random.randint(0, 10))
-            col1, col2 = st.columns(2)
-            col1.metric("Lotto Numbers:", str(p_nums))
-            col2.metric("Superzahl:", str(p_super))
+            display_numbers(p_nums, p_super, "Superzahl")
         else:
             p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
             p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-            col1, col2 = st.columns(2)
-            col1.metric("Main Numbers:", str(p_nums))
-            col2.metric("Euro Zahlen:", str(p_stars))
+            display_numbers(p_nums, p_stars, "Euro Zahlen")
 
 with tab1:
     run_full_features_tab(df_lotto, "Lotto", files_lotto, False)
