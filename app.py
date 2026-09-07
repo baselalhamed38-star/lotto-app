@@ -67,7 +67,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### 🎯 Dashboard 2026")
-    st.info("نظام ذكي متكامل لتحليل السحوبات التاريخية وتوليد التوقعات لعام 2026 مع مؤشرات قوة الاقتراح.")
+    st.info("نظام ذكي متكامل لتحليل السحوبات التاريخية وتوليد التوقعات لعام 2026 مع خيارات النورمال والسيستيم شاين.")
 
 # نصوص مترجمة حسب اختيار المستخدم
 texts = {
@@ -82,8 +82,14 @@ texts = {
         "found_res": "✅ تم العثور على سحوبات مطابقة في نفس اليوم والشهر:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مسجلة في هذا التاريخ بالتحديد ضمن الأرشيف.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
-        "hist_btn_title": "🔍 تحليل الأرشيف التاريخي وتوليد توقعات 2026",
-        "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
+        "gen_title": "🎲 مركز توليد التوقعات الذكية (الأرشيف)",
+        "schein_type": "نوع الورقة (Tippschein Type):",
+        "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
+        "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة)",
+        "select_lotto_system": "اختر نظام السيستيم (Vollsystem):",
+        "select_euro_system": "اختر نظام يوروجاكبوت (System):",
+        "gen_btn": "🚀 توليد الأرقام والتحليل",
+        "birth_title": "📅 نافذة تاريخ الميلاد المستقلة (مفتوحة)",
         "birth_select": "حدد تاريخ ميلادك:",
         "birth_btn": "🎲 توليد أرقام 2026 (تاريخ الميلاد)",
         "zodiac_title": "🌟 نافذة الأبراج الفلكية المستقلة",
@@ -102,8 +108,14 @@ texts = {
         "found_res": "✅ Matching draws found for this day and month:",
         "no_res": "⚠️ No exact draws found for this specific date in the archive.",
         "expander_title": "👁️ View Complete Archive",
-        "hist_btn_title": "🔍 Analyze Historical Archive & Generate 2026 Predictions",
-        "birth_title": "📅 Independent Birthdate Window",
+        "gen_title": "🎲 Smart Prediction Center (Archive)",
+        "schein_type": "Tippschein Type:",
+        "normal_schein": "Normal Schein (6 numbers)",
+        "system_schein": "System Schein (Extended numbers)",
+        "select_lotto_system": "Select Lotto System (Vollsystem):",
+        "select_euro_system": "Select Eurojackpot System:",
+        "gen_btn": "🚀 Generate Numbers & Analysis",
+        "birth_title": "📅 Independent Birthdate Window (Open)",
         "birth_select": "Select your birthdate:",
         "birth_btn": "🎲 Generate 2026 Numbers (Birthdate)",
         "zodiac_title": "🌟 Independent Zodiac Window",
@@ -122,8 +134,14 @@ texts = {
         "found_res": "✅ Übereinstimmende Ziehungen für diesen Tag und Monat gefunden:",
         "no_res": "⚠️ Keine genauen Ziehungen für dieses Datum im Archiv gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
-        "hist_btn_title": "🔍 Historisches Archiv analysieren & 2026 Prognosen generieren",
-        "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
+        "gen_title": "🎲 Intelligentes Prognose-Center (Archiv)",
+        "schein_type": "Tippschein-Typ:",
+        "normal_schein": "Normaler Schein (6 Zahlen)",
+        "system_schein": "Systemschein (Erweiterte Zahlen)",
+        "select_lotto_system": "Lotto System wählen (Vollsystem):",
+        "select_euro_system": "Eurojackpot System wählen:",
+        "gen_btn": "🚀 Zahlen & Analyse generieren",
+        "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster (Offen)",
         "birth_select": "Geburtsdatum wählen:",
         "birth_btn": "🎲 2026 Zahlen generieren (Geburtsdatum)",
         "zodiac_title": "🌟 Unabhängiges Sternzeichen-Fenster",
@@ -149,7 +167,6 @@ def load_game_files(game_type):
         elif game_type == "euro" and ("euro" in f_lower or "ej" in f_lower):
             matched_files.append(f)
             
-    # في حال لم يتم مطابقة ملفات مخصصة، نأخذ كل الملفات المتاحة كاحتياط
     if not matched_files:
         matched_files = all_files
         
@@ -164,8 +181,7 @@ def load_game_files(game_type):
                         if not df_sheet.empty:
                             df_sheet['Source_Info'] = f"File: {file_name} ➔ [Sheet: {sheet_name}]"
                             all_draws.append(df_sheet)
-                except Exception as ex_xls:
-                    # محاولة بديلة إذا كان الملف بصيغة قديمة تتطلب محركاً مختلفاً
+                except Exception:
                     df_alt = pd.read_excel(file_name, header=None)
                     if not df_alt.empty:
                         df_alt['Source_Info'] = f"File: {file_name}"
@@ -175,7 +191,7 @@ def load_game_files(game_type):
                 if not df_csv.empty:
                     df_csv['Source_Info'] = f"File: {file_name}"
                     all_draws.append(df_csv)
-        except Exception as e:
+        except Exception:
             pass
             
     if all_draws:
@@ -196,7 +212,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         
     total_rows = len(df)
     
-    # بطاقة إحصائية جذابة
     st.markdown(f"""
         <div class="metric-card">
             <h2>📊 {game_name} Archive Analysis</h2>
@@ -243,42 +258,82 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # ----------------- 2. زر تحليل السحوبات التاريخية لتوليد التوقعات -----------------
-    st.markdown(f"### {t['hist_btn_title']}")
-    hist_counter_key = f"counter_hist_{game_name}"
-    if hist_counter_key not in st.session_state:
-        st.session_state[hist_counter_key] = 0
+    # ----------------- 2. مركز توليد التوقعات (النورمال مقابل السيستيم شاين) -----------------
+    st.markdown(f"### {t['gen_title']}")
+    
+    schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
+    
+    selected_count = 6 # افتدري للوتو النورمال
+    euro_count = 2
+    
+    if schein_mode == t["system_schein"]:
+        if not is_euro:
+            lotto_sys_choice = st.selectbox(
+                t["select_lotto_system"], 
+                ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)", "Vollsystem 011 (11 أرقام)", "Vollsystem 012 (12 أرقام)"],
+                key=f"l_sys_{game_name}"
+            )
+            selected_count = int(lotto_sys_choice.split()[1])
+        else:
+            euro_sys_choice = st.selectbox(
+                t["select_euro_system"],
+                ["System 5/3 (5 أرقام أساسية + 3 نجوم)", "System 5/4 (5 أرقام أساسية + 4 نجوم)", "System 6/2 (6 أرقام أساسية + 2 نجوم)", "System 7/2 (7 أرقام أساسية + 2 نجوم)"],
+                key=f"e_sys_{game_name}"
+            )
+            if "5/" in euro_sys_choice:
+                selected_count = 5
+                euro_count = int(euro_sys_choice.split('/')[1].split()[0])
+            elif "6/" in euro_sys_choice:
+                selected_count = 6
+                euro_count = 2
+            elif "7/" in euro_sys_choice:
+                selected_count = 7
+                euro_count = 2
+
+    gen_counter_key = f"counter_gen_{game_name}"
+    if gen_counter_key not in st.session_state:
+        st.session_state[gen_counter_key] = 0
         
-    if st.button(t["hist_btn_title"], key=f"btn_hist_{game_name}"):
-        st.session_state[hist_counter_key] += 1
+    if st.button(t["gen_btn"], key=f"btn_gen_{game_name}"):
+        st.session_state[gen_counter_key] += 1
         
-    if st.session_state[hist_counter_key] > 0:
-        seed_hist = abs(total_rows + (st.session_state[hist_counter_key] * 444)) % (2**31 - 1)
-        np.random.seed(seed_hist)
+    if st.session_state[gen_counter_key] > 0:
+        seed_gen = abs(total_rows + (st.session_state[gen_counter_key] * 555)) % (2**31 - 1)
+        np.random.seed(seed_gen)
         
-        confidence_score = min(88 + (total_rows % 11) + (st.session_state[hist_counter_key] % 3), 99)
+        confidence_score = min(85 + (total_rows % 12) + (st.session_state[gen_counter_key] % 4), 99)
         
-        st.success(f"✨ Prediction #{st.session_state[hist_counter_key]} (Historical Analysis):")
-        st.info(f"{t['power_label']} **{confidence_score}%** (Strong / قوي جداً)")
+        if schein_mode == t["normal_schein"]:
+            st.success(f"✨ Normal Schein Prediction #{st.session_state[gen_counter_key]}:")
+        else:
+            st.success(f"⚙️ System Schein Prediction #{st.session_state[gen_counter_key]} ({schein_mode}):")
+            
+        st.info(f"{t['power_label']} **{confidence_score}%** (Archive Matrix)")
         
         if not is_euro:
-            p_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+            p_nums = sorted(np.random.choice(range(1, 50), selected_count, replace=False).tolist())
             p_super = int(np.random.randint(0, 10))
             col1, col2 = st.columns(2)
-            col1.metric("Lotto Numbers:", str(p_nums))
+            col1.metric("Selected Numbers:", str(p_nums))
             col2.metric("Superzahl:", str(p_super))
         else:
-            p_nums = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
-            p_stars = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
+            p_nums = sorted(np.random.choice(range(1, 51), selected_count, replace=False).tolist())
+            p_stars = sorted(np.random.choice(range(1, 13), euro_count, replace=False).tolist())
             col1, col2 = st.columns(2)
             col1.metric("Main Numbers:", str(p_nums))
-            col2.metric("Euro Zahlen:", str(p_stars))
+            col2.metric("Euro Zahlen (Stars):", str(p_stars))
             
     st.markdown("---")
     
-    # ----------------- 3. نافذة تاريخ الميلاد المستقلة -----------------
+    # ----------------- 3. نافذة تاريخ الميلاد المستقلة (مفتوحة) -----------------
     st.markdown(f"### {t['birth_title']}")
-    birth_date = st.date_input(t["birth_select"], value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
+    birth_date = st.date_input(
+        t["birth_select"], 
+        value=datetime(1990, 1, 1), 
+        min_value=datetime(1900, 1, 1), 
+        max_value=datetime.today(), 
+        key=f"b_date_{game_name}"
+    )
     
     birth_counter_key = f"counter_birth_{game_name}"
     if birth_counter_key not in st.session_state:
