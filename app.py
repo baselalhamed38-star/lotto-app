@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Multi-Formula & Intersection Engine 2026", 
+    page_title="Lottery Ultimate Engine 2026", 
     page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -35,7 +35,8 @@ st.markdown("""
     }
     .intersection-box {
         background-color: #e8f4fd; border: 2px dashed #1f77b4;
-        padding: 20px; border-radius: 10px; margin-top: 20px;
+        padding: 20px; border-radius: 10px; margin-top: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
     .stButton>button {
         width: 100%; border-radius: 10px; font-weight: bold; height: 45px;
@@ -58,18 +59,18 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك المعادلات التفصيلية لكل رقم وتقاطع السحوبات لعام 2026.")
+    st.info("محرك المعادلات الشامل وتقاطع السحوبات مع اقنراح السوبر زاهل لعام 2026.")
 
 texts = {
     "العربية": {
-        "title": "🎯 محرك المعادلات التفصيلية لكل رقم وتقاطع السحوبات لعام 2026",
+        "title": "🎯 المحرك الشامل لمعادلات الأرشيف والتقاطع النهائي لعام 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات في نفس (اليوم والشهر) واستخراج معادلة لكل رقم",
+        "search_title": "📅 مطابقة السحوبات (اليوم والشهر) وتحليل المعادلات الشامل",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "calc_btn": "⚡ تحليل مفصل، استخراج معادلات الأرقام، وعمل التقاطع لـ 2026",
+        "calc_btn": "⚡ تحليل كامل، استخراج المعادلات، وعمل التقاطع النهائي لـ 2026",
         "found_res": "✅ السحوبات التاريخية المطابقة:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر بالأرشيف.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
@@ -89,14 +90,14 @@ texts = {
         "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "🎯 Detailed Multi-Formula & Intersection Engine for 2026",
+        "title": "🎯 Ultimate Archive Equation & Final Intersection Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Draws on the Same Day & Month & Extract Formula per Number",
+        "search_title": "📅 Match Draws (Day & Month) & Comprehensive Equation Analysis",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "calc_btn": "⚡ Detailed Analysis, Extract Formulas & Intersect for 2026",
+        "calc_btn": "⚡ Full Analysis, Extract Formulas & Final Intersection for 2026",
         "found_res": "✅ Matched Historical Draws:",
         "no_res": "⚠️ No matching draws found.",
         "expander_title": "👁️ View Complete Archive",
@@ -116,14 +117,14 @@ texts = {
         "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "🎯 Detaillierte Multi-Formel & Intersektions-Engine 2026",
+        "title": "🎯 Ultimative Archiv-Gleichungs & Finale Intersektions-Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Ziehungen am selben Tag & Monat matchen & Formel pro Zahl extrahieren",
+        "search_title": "📅 Ziehungen matchen (Tag & Monat) & Umfassende Formelanalyse",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "calc_btn": "⚡ Detaillierte Analyse, Formeln extrahieren & Intersektion für 2026",
+        "calc_btn": "⚡ Vollständige Analyse, Formeln extrahieren & Finale Intersektion 2026",
         "found_res": "✅ Passende historische Ziehungen:",
         "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
@@ -190,7 +191,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive & Multi-Formula Engine</h2>
+            <h2>📊 {game_name} Archive & Ultimate Intersection Engine</h2>
             <h3>Total Historical Draws: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
@@ -243,7 +244,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 المعادلات التفصيلية المستخرجة لكل رقم فردي في السحوبات:")
+                st.markdown("### 🧮 أولاً: المعادلات التفصيلية المستخرجة لكل سحب تاريخي:")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
@@ -275,14 +276,12 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     all_historical_extracted_sets.append(set(core_nums))
                     all_historical_specials.append(spec_val)
 
-                    # توليد معادلة مستقلة لكل رقم من الأرقام الستة + السوبر زاهل
+                    # توليد المعادلات الفردية
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
-                        # معادلة عكسية دقيقة لكل رقم بناءً على قيمته وترتيبه وتاريخ السحب
                         factor = (num_val * 7 + selected_day * pos_idx) % max_range + 1
                         formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {factor}</code><br>"
 
-                    # معادلة السوبر زاهل
                     spec_factor = (spec_val * 3 + selected_day) % special_limit + 1
                     formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_factor}</code>"
 
@@ -290,7 +289,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     <div class="formula-box">
                         <b>السحب التاريخي رقم ({original_idx + 1}):</b><br>
                         📌 <b>الأرقام الفعلية:</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
-                        <br>📐 <b>المعادلات التفصيلية المستخرجة لكل رقم على حدة:</b><br>
+                        <br>📐 <b>المعادلات التفصيلية:</b><br>
                         {formulas_html}
                     </div>
                     """, unsafe_allow_html=True)
@@ -302,10 +301,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     all_historical_extracted_sets.append(set(fallback_nums))
                     all_historical_specials.append(i % special_limit)
 
-            # ── تنفيذ التقاطع (Intersection) لاستخراج توقعات 2026 ──
-            st.markdown("---")
+            # ── ثانياً: تنفيذ التقاطع النهائي وتوليد السوبر زاهل الموصى به لعام 2026 ──
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
-            st.markdown(f"### 🎯 نتائج تقاطع المعادلات والسحوبات التاريخية لعام 2026")
+            st.markdown(f"### 🎯 ثانياً: نتائج التقاطع النهائي لجميع المعادلات والسحوبات التاريخية لعام 2026")
             
             if all_historical_extracted_sets:
                 intersection_set = set.intersection(*all_historical_extracted_sets)
@@ -320,13 +318,21 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             else:
                 final_intersect_nums = [3, 15, 27, 34, 41, 48][:pick_count]
 
-            final_special_num = int(np.mean(all_historical_specials)) % special_limit if all_historical_specials else 4
-            if is_euro:
-                final_special_nums = sorted([final_special_num, (final_special_num + 2) % special_limit + 1])
+            # حساب واقتراح رقم الـ Superzahl أو الـ Euro Zahlen بدقة بناءً على الأرشيف وتقاطعه
+            if all_historical_specials:
+                from collections import Counter
+                spec_counts = Counter(all_historical_specials)
+                # الأرجح والأكثر تكراراً في التاريخ لهذا اليوم
+                most_common_spec = spec_counts.most_common(1)[0][0]
             else:
-                final_special_nums = final_special_num
+                most_common_spec = 3
 
-            st.markdown(f"**الرؤية الرياضية المتقاطعة المستخلصة لعام 2026 (بناءً على تاريخ {selected_day}/{selected_month_num}):**")
+            if is_euro:
+                final_special_nums = sorted([most_common_spec, (most_common_spec + 3) % special_limit + 1])
+            else:
+                final_special_nums = most_common_spec
+
+            st.markdown(f"**الرؤية الرياضية المتقاطعة والنهائية لعام 2026 (بناءً على تاريخ {selected_day}/{selected_month_num}):**")
             display_numbers(final_intersect_nums, final_special_nums, special_name)
             st.markdown("</div>", unsafe_allow_html=True)
 
