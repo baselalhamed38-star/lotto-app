@@ -72,7 +72,8 @@ st.markdown("---")
 def load_files(game_type):
     all_files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx', '.xls', '.csv'))]
     matched = [f for f in all_files if game_type in f.lower()]
-    if not matched: matched = all_files
+    if not matched: 
+        matched = all_files
     
     dfs = []
     for f in matched:
@@ -99,12 +100,14 @@ def run_formula_engine(df, is_euro, game_name):
     st.markdown(f"### {t['search_title']}")
     
     col1, col2, col3 = st.columns(3)
-    with col1: d_val = st.number_input("Day / اليوم", 1, 31, 9, key=f"d_{game_name}")
-    with col2: m_val = st.number_input("Month / الشهر", 1, 12, 9, key=f"m_{game_name}")
-    with col3: y_val = st.number_input("Year / السنة", 2000, 2026, 2020, key=f"y_{game_name}")
+    with col1: 
+        d_val = st.number_input("Day / اليوم", 1, 31, 9, key=f"d_{game_name}")
+    with col2: 
+        m_val = st.number_input("Month / الشهر", 1, 12, 9, key=f"m_{game_name}")
+    with col3: 
+        y_val = st.number_input("Year / السنة", 2000, 2026, 2020, key=f"y_{game_name}")
     
     if st.button(t["calc_btn"], key=f"btn_form_{game_name}"):
-        # البحث عن السحب المطابق تماماً في الأرشيف
         matched_row = None
         if not df.empty:
             for _, row in df.iterrows():
@@ -121,12 +124,11 @@ def run_formula_engine(df, is_euro, game_name):
         st.markdown("### 🔬 نتائج التحليل الخوارزمي والمعادلة المستنبِطة:")
         
         if matched_row is not None:
-            st.success(ف"✅ تم العثور على السحب التاريخي المطابق ليوم {d_val:02d}.{m_val:02d}.{y_val} في الأرشيف!")
+            st.success(f"✅ تم العثور على السحب التاريخي المطابق ليوم {d_val:02d}.{m_val:02d}.{y_val} في الأرشيف!")
             st.dataframe(pd.DataFrame([matched_row]), use_container_width=True)
         else:
             st.warning("⚠️ لم يتم العثور على هذا التاريخ بالتحديد في الأرشيف المرفق، سيتم تطبيق نموذج المعادلة الرياضية الافتراضية بناءً على خوارزمية التاريخ.")
 
-        # توليد معادلة رياضية افتراضية توضيحية بناءً على المدخلات
         st.markdown(f"""
         <div class="formula-box">
             <b>نموذج المعادلة الرياضية المستنبِطة لتاريخ السحب (Day: {d_val}, Month: {m_val}, Year: {y_val}):</b><br>
@@ -143,7 +145,6 @@ def run_formula_engine(df, is_euro, game_name):
         spec_limit = 12 if is_euro else 10
         
         for i in range(1, 5):
-            # خوارزمية مبنية على دمج عناصر التاريخ مع معامل التكرار
             seed_val = (d_val * 31 + m_val * 12 + 2026 + i * 77) % 100000
             np.random.seed(seed_val)
             
