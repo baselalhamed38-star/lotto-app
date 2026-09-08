@@ -42,7 +42,7 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات")
     lang_choice = st.selectbox("اختر اللغة:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("عرض كافة السحوبات التاريخية المطابقة لنفس اليوم واستخراج معادلة 2026.")
+    st.info("نظام عرض كافة السحوبات التاريخية المطابقة واستخراج معادلة 2026.")
 
 texts = {
     "العربية": {
@@ -50,10 +50,10 @@ texts = {
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 كافة السحوبات التاريخية المطابقة لنفس اليوم والشهر عبر كل السنوات:",
+        "search_title": "📅 كافة السحوبات التاريخية المطابقة لنفس اليوم والشهر (عبر كل السنوات):",
         "day_label": "اختر اليوم:",
         "month_label": "اختر الشهر:",
-        "found_res": "✅ تم العثور على السحوبات التالية المطابقة لنفس التاريخ:",
+        "found_res": "✅ السحوبات التاريخية المطابقة لنفس اليوم والشهر:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا التاريخ بالتحديد.",
         "eq_analysis_title": "🧮 معادلة السحب المستخرجة من الأرشيف لعام 2026:",
         "gen_title": "🎲 توليد احتمالات واقتراحات سحب 2026",
@@ -71,7 +71,7 @@ texts = {
         "search_title": "📅 All Historical Draws Matching Same Day & Month:",
         "day_label": "Select Day:",
         "month_label": "Select Month:",
-        "found_res": "✅ Found matching historical draws:",
+        "found_res": "✅ Matching historical draws:",
         "no_res": "⚠️ No exact matches found.",
         "eq_analysis_title": "🧮 2026 Draw Equation Extracted from Archive:",
         "gen_title": "🎲 Generate 2026 Predictions",
@@ -178,11 +178,15 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
         
     day_str = f"{selected_day:02d}"
     df_str = df.astype(str)
+    
+    # أنماط بحث متعددة لضمان التقاط كل الصيغ التاريخية في الإكسل
     p_dot = f".*\\b{day_str}\\.{selected_month_num}\\b.*"
     p_slash = f".*\\b{int(day_str)}/{int(selected_month_num)}/.*"
+    p_dot_single = f".*\\b{int(day_str)}\\.{int(selected_month_num)}\\b.*"
     
     mask = df_str.apply(lambda x: x.str.contains(p_dot, regex=True, case=False, na=False) |
-                                  x.str.contains(p_slash, regex=True, case=False, na=False)).any(axis=1)
+                                  x.str.contains(p_slash, regex=True, case=False, na=False) |
+                                  x.str.contains(p_dot_single, regex=True, case=False, na=False)).any(axis=1)
     res_date = df[mask]
     
     all_extracted_sums = []
@@ -191,7 +195,7 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
     st.markdown(f"### {t['search_title']}")
     if not res_date.empty:
         st.success(f"{t['found_res']} ({day_str}/{selected_month_num}) — عدد السحوبات المطابقة: {len(res_date)}")
-        # عرض كافة السحوبات المطابقة في جدول واضح
+        # عرض كافة السحوبات المطابقة بجدول واضح تماماً
         st.dataframe(res_date, use_container_width=True)
         
         for _, r in res_date.iterrows():
@@ -217,7 +221,7 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
     eq_val_1 = (avg_sum * selected_day + 2026) % max_limit
     if eq_val_1 == 0: eq_val_1 = 1
     
-    eq_val_2 = (avg_sum * len(all_extracted_sums) + 43) % max_limit
+    eq_val_2 = (avg_sum * len(res_date) + 43) % max_limit
     if eq_val_2 == 0: eq_val_2 = 2
 
     st.markdown(f"### {t['eq_analysis_title']}")
