@@ -5,8 +5,8 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Ultimate Engine 2026", 
-    page_icon="🎯", 
+    page_title="Lottery Fast Ultimate Engine 2026", 
+    page_icon="⚡", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -59,18 +59,18 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك المعادلات الشامل وتقاطع السحوبات مع اقنراح السوبر زاهل لعام 2026.")
+    st.info("النسخة السريعة والمحسنة لمعادلات الأرشيف لعام 2026.")
 
 texts = {
     "العربية": {
-        "title": "🎯 المحرك الشامل لمعادلات الأرشيف والتقاطع النهائي لعام 2026",
+        "title": "⚡ المحرك الفائق والمنسق لمعادلات الأرشيف لعام 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات (اليوم والشهر) وتحليل المعادلات الشامل",
+        "search_title": "📅 مطابقة السحوبات (اليوم والشهر) وتحليل المعادلات السريع",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "calc_btn": "⚡ تحليل كامل، استخراج المعادلات، وعمل التقاطع النهائي لـ 2026",
+        "calc_btn": "⚡ تنفيذ التحليل الفوري واستخراج التقاطع لـ 2026",
         "found_res": "✅ السحوبات التاريخية المطابقة:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر بالأرشيف.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
@@ -90,14 +90,14 @@ texts = {
         "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "🎯 Ultimate Archive Equation & Final Intersection Engine 2026",
+        "title": "⚡ Fast Optimized Archive & Intersection Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Draws (Day & Month) & Comprehensive Equation Analysis",
+        "search_title": "📅 Match Draws (Day & Month) & Fast Equation Analysis",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "calc_btn": "⚡ Full Analysis, Extract Formulas & Final Intersection for 2026",
+        "calc_btn": "⚡ Run Fast Analysis & Extract Intersection for 2026",
         "found_res": "✅ Matched Historical Draws:",
         "no_res": "⚠️ No matching draws found.",
         "expander_title": "👁️ View Complete Archive",
@@ -117,14 +117,14 @@ texts = {
         "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "🎯 Ultimative Archiv-Gleichungs & Finale Intersektions-Engine 2026",
+        "title": "⚡ Schnelle Optimierte Archiv & Intersektions-Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Ziehungen matchen (Tag & Monat) & Umfassende Formelanalyse",
+        "search_title": "📅 Ziehungen matchen (Tag & Monat) & Schnelle Formelanalyse",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "calc_btn": "⚡ Vollständige Analyse, Formeln extrahieren & Finale Intersektion 2026",
+        "calc_btn": "⚡ Schnelle Analyse ausführen & Intersektion für 2026",
         "found_res": "✅ Passende historische Ziehungen:",
         "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
@@ -150,7 +150,7 @@ t = texts[lang_choice]
 st.markdown(f"<h1 style='text-align: center; color: #1f77b4;'>{t['title']}</h1>", unsafe_allow_html=True)
 st.markdown("---")
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_game_files(game_type):
     all_files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx', '.xls', '.csv'))]
     matched_files = [f for f in all_files if game_type in f.lower()]
@@ -191,7 +191,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive & Ultimate Intersection Engine</h2>
+            <h2>📊 {game_name} Archive & Fast Engine</h2>
             <h3>Total Historical Draws: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
@@ -276,7 +276,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     all_historical_extracted_sets.append(set(core_nums))
                     all_historical_specials.append(spec_val)
 
-                    # توليد المعادلات الفردية
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
                         factor = (num_val * 7 + selected_day * pos_idx) % max_range + 1
@@ -301,7 +300,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     all_historical_extracted_sets.append(set(fallback_nums))
                     all_historical_specials.append(i % special_limit)
 
-            # ── ثانياً: تنفيذ التقاطع النهائي وتوليد السوبر زاهل الموصى به لعام 2026 ──
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
             st.markdown(f"### 🎯 ثانياً: نتائج التقاطع النهائي لجميع المعادلات والسحوبات التاريخية لعام 2026")
             
@@ -318,11 +316,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             else:
                 final_intersect_nums = [3, 15, 27, 34, 41, 48][:pick_count]
 
-            # حساب واقتراح رقم الـ Superzahl أو الـ Euro Zahlen بدقة بناءً على الأرشيف وتقاطعه
             if all_historical_specials:
                 from collections import Counter
                 spec_counts = Counter(all_historical_specials)
-                # الأرجح والأكثر تكراراً في التاريخ لهذا اليوم
                 most_common_spec = spec_counts.most_common(1)[0][0]
             else:
                 most_common_spec = 3
@@ -341,7 +337,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # ── مركز توليد الأوراق (Normal & System) ──
     st.markdown(f"### {t['gen_title']}")
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
     selected_count, euro_count = 6, 2
@@ -366,7 +361,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
     st.markdown("---")
     
-    # ── نافذة تاريخ الميلاد المستقلة ──
     st.markdown(f"### {t['birth_title']}")
     birth_date = st.date_input(t["birth_select"], value=datetime(1990, 1, 1), key=f"birth_{game_name}")
     birth_counter_key = f"counter_birth_{game_name}"
@@ -383,7 +377,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
     st.markdown("---")
     
-    # ── نافذة الأبراج الفلكية المستقلة ──
     st.markdown(f"### {t['zodiac_title']}")
     zodiac_signs = ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"]
     selected_zodiac = st.selectbox(t["zodiac_select"], zodiac_signs, key=f"zodiac_{game_name}")
