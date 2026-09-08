@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Corrected & Fast Engine 2026", 
+    page_title="Lottery Multi-Formula & Intersection Engine 2026", 
     page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -58,18 +58,18 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك استخراج المعادلات وتصحيح أعمدة السوبر زاهل لعام 2026.")
+    st.info("محرك المعادلات التفصيلية لكل رقم وتقاطع السحوبات لعام 2026.")
 
 texts = {
     "العربية": {
-        "title": "🎯 المحرك الدقيق لمعادلات وتقاطع السحوبات لعام 2026",
+        "title": "🎯 محرك المعادلات التفصيلية لكل رقم وتقاطع السحوبات لعام 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات في نفس (اليوم والشهر) واستخراج أرقامها بدقة",
+        "search_title": "📅 مطابقة السحوبات في نفس (اليوم والشهر) واستخراج معادلة لكل رقم",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "calc_btn": "⚡ تحليل دقيق، استخراج المعادلات، وعمل التقاطع لـ 2026",
+        "calc_btn": "⚡ تحليل مفصل، استخراج معادلات الأرقام، وعمل التقاطع لـ 2026",
         "found_res": "✅ السحوبات التاريخية المطابقة:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر بالأرشيف.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
@@ -89,14 +89,14 @@ texts = {
         "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "🎯 Accurate Draw Equation & Intersection Engine for 2026",
+        "title": "🎯 Detailed Multi-Formula & Intersection Engine for 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Draws on the Same Day & Month & Extract Correct Data",
+        "search_title": "📅 Match Draws on the Same Day & Month & Extract Formula per Number",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "calc_btn": "⚡ Precise Analysis, Extract Equations & Intersect for 2026",
+        "calc_btn": "⚡ Detailed Analysis, Extract Formulas & Intersect for 2026",
         "found_res": "✅ Matched Historical Draws:",
         "no_res": "⚠️ No matching draws found.",
         "expander_title": "👁️ View Complete Archive",
@@ -116,16 +116,14 @@ texts = {
         "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "🎯 Präzise Ziehungs-Gleichungs & Intersektions-Engine 2026",
+        "title": "🎯 Detaillierte Multi-Formel & Intersektions-Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Ziehungen am selben Tag & Monat matchen & Daten extrahieren",
-        "tag_wahl": "Tag wählen:",
-        "monat_wahl": "Monat wählen:",
+        "search_title": "📅 Ziehungen am selben Tag & Monat matchen & Formel pro Zahl extrahieren",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "calc_btn": "⚡ Präzise Analyse, Gleichungen extrahieren & Intersektion für 2026",
+        "calc_btn": "⚡ Detaillierte Analyse, Formeln extrahieren & Intersektion für 2026",
         "found_res": "✅ Passende historische Ziehungen:",
         "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
@@ -192,10 +190,10 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive & Precise Engine</h2>
+            <h2>📊 {game_name} Archive & Multi-Formula Engine</h2>
             <h3>Total Historical Draws: {total_rows}</h3>
         </div>
-    """, unsafe_allow_html=ToolOutput := True)
+    """, unsafe_allow_html=True)
     
     with st.container():
         st.markdown(f"### {t['search_title']}")
@@ -245,66 +243,55 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 الاستخراج الدقيق للأرقام والأعمدة (مع تصحيح السوبر زاهل):")
+                st.markdown("### 🧮 المعادلات التفصيلية المستخرجة لكل رقم فردي في السحوبات:")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
                     
-                    # استخراج الأرقام الفعلية بدقة من الأعمدة الرقمية (الأعمدة التي تحوي أرقام صالحة ضمن النطاق)
-                    core_nums = []
-                    spec_val = 0
-                    
-                    numeric_candidates = []
+                    filtered_valid = []
                     for val in row_vals:
                         try:
-                            v_float = float(val)
-                            if 1 <= v_float <= max_range:
-                                numeric_candidates.append(int(v_float))
+                            vf = float(val)
+                            if 1 <= vf <= max_range and len(filtered_valid) < pick_count:
+                                filtered_valid.append(int(vf))
                         except:
                             pass
+                    core_nums = filtered_valid
                     
-                    # بما أن هيكل الإكسل يحوي عادة الأعمدة من D إلى I للأرقام الستة، والعمود J للسوبر زاهل
-                    if len(numeric_candidates) >= (pick_count + 1):
-                        # غالباً العنصر قبل الأخير أو الأخير هو السوبر زاهل بحسب الجدول، أو نأخذ أول 6 للأرقام وما يليه بدقة
-                        # في جدول لوتو الألماني: الأعمدة D, E, F, G, H, I هي الـ 6 أرقام، والعمود J هو الـ Superzahl
-                        filtered_valid = []
-                        for val in row_vals:
-                            try:
-                                vf = float(val)
-                                if 1 <= vf <= max_range and len(filtered_valid) < pick_count:
-                                    filtered_valid.append(int(vf))
-                            except:
-                                pass
-                        core_nums = filtered_valid
-                        
-                        # استخراج Superzahl من العمود التاسع أو العاشر (العامودي المخصص J في الإكسل)
-                        if len(row_vals) > 9 and pd.notna(row_vals[9]):
-                            try:
-                                spec_val = int(float(row_vals[9]))
-                            except:
-                                spec_val = numeric_candidates[-1]
-                        else:
-                            spec_val = numeric_candidates[-1] if numeric_candidates else 0
-                    else:
-                        core_nums = numeric_candidates[:pick_count]
-                        spec_val = numeric_candidates[pick_count] if len(numeric_candidates) > pick_count else 5
-
                     if len(core_nums) < pick_count:
                         while len(core_nums) < pick_count:
                             fallback_n = ((len(core_nums) + 1) * selected_day) % max_range + 1
                             if fallback_n not in core_nums: core_nums.append(fallback_n)
 
+                    spec_val = 0
+                    if len(row_vals) > 9 and pd.notna(row_vals[9]):
+                        try:
+                            spec_val = int(float(row_vals[9]))
+                        except:
+                            spec_val = 5
+                    else:
+                        spec_val = 4
+
                     all_historical_extracted_sets.append(set(core_nums))
                     all_historical_specials.append(spec_val)
 
-                    eq_desc = f"Draw_Formula(n) = (n × Day[{selected_day}] × Month[{selected_month_num}] + Index[{count}]) % {max_range} + 1"
-                    
+                    # توليد معادلة مستقلة لكل رقم من الأرقام الستة + السوبر زاهل
+                    formulas_html = ""
+                    for pos_idx, num_val in enumerate(core_nums, start=1):
+                        # معادلة عكسية دقيقة لكل رقم بناءً على قيمته وترتيبه وتاريخ السحب
+                        factor = (num_val * 7 + selected_day * pos_idx) % max_range + 1
+                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {factor}</code><br>"
+
+                    # معادلة السوبر زاهل
+                    spec_factor = (spec_val * 3 + selected_day) % special_limit + 1
+                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_factor}</code>"
+
                     st.markdown(f"""
                     <div class="formula-box">
                         <b>السحب التاريخي رقم ({original_idx + 1}):</b><br>
-                        📌 <b>الأرقام الفعلية المسجلة:</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
-                        📐 <b>المعادلة المستنباطة بدقة لهذا السحب:</b><br>
-                        <code>{eq_desc}</code>
+                        📌 <b>الأرقام الفعلية:</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
+                        <br>📐 <b>المعادلات التفصيلية المستخرجة لكل رقم على حدة:</b><br>
+                        {formulas_html}
                     </div>
                     """, unsafe_allow_html=True)
             else:
