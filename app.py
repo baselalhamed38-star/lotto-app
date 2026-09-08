@@ -241,8 +241,7 @@ def display_numbers(numbers, special_num, special_label="Superzahl"):
     st.markdown(f"**Selected Numbers ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
     st.markdown(f"<br>**{special_label}:**<br>{spec_html}", unsafe_allow_html=True)
 
-def extract_numbers_from_row(row, max_num=49, is_euro=False):
-    """استخراج الأرقام البحتة من سطر الأرشيف لحساب التكرارات"""
+def extract_numbers_from_row(row):
     nums = []
     for val in row.values:
         if pd.notna(val):
@@ -296,7 +295,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         
         res_date = df[exact_date_mask]
         
-        # تحليل الأرقام الأكثر تكراراً وتطبيق المعادلة الإحصائية لتاريخ 2026
         super_candidates = []
         regular_candidates = []
         
@@ -304,52 +302,42 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             st.success(f"{t['found_res']} ({day_str}/{selected_month_num}) — عدد المطابقات: {len(res_date)}")
             st.dataframe(res_date, use_container_width=True)
             
-            # استخراج الأرقام من النتائج المطابقة لنفس التاريخ عبر السنوات
             for _, r in res_date.iterrows():
                 extracted = extract_numbers_from_row(r)
                 if extracted:
                     regular_candidates.extend(extracted)
-                    # نفترض آخر الأرقام أو الأرقام الصغيرة تمثل السوبر زاهل / النجوم في الأرشيف
                     super_candidates.append(extracted[-1] % (10 if not is_euro else 12))
         else:
             st.warning(t["no_res"])
-            # Fallback للتحليل الشامل من كامل الأرشيف في حال عدم وجود تطابق للتاريخ الحرفي
             for _, r in df.head(100).iterrows():
                 extracted = extract_numbers_from_row(r)
                 if extracted:
                     regular_candidates.extend(extracted)
                     super_candidates.append(extracted[-1] % (10 if not is_euro else 12))
 
-        # تحليل السوبر زاهل الأكثر ترجيحاً بناءً على تكرار الأرشيف
         if super_candidates:
             from collections import Counter
             counts = Counter(super_candidates)
             most_common_super = counts.most_common(1)[0][0]
             if most_common_super == 0 and not is_euro:
-                most_common_super = 5 # ضمان رقم صالح
+                most_common_super = 5 
         else:
             most_common_super = 7 if not is_euro else 3
 
-        # معادلة 2026 التحليلية الإحصائية (ليست عشوائية)
-        # Equation: Target = (Sum of Date Matrix * Historical Frequency Weight + Year 2026 Modulo Range)
         date_numeric_val = int(day_str) * int(selected_month_num) * 2026
-        if regular_candidates:
-            freq_factor = len(regular_candidates) % 7
-        else:
-            freq_factor = 3
-            
+        freq_factor = len(regular_candidates) % 7 if regular_candidates else 3
         max_limit = 50 if is_euro else 49
         calculated_2026_seed = (date_numeric_val + (freq_factor * 13)) % max_limit
         if calculated_2026_seed == 0:
             calculated_2026_seed = 1
 
         st.markdown(f"### {t['eq_analysis_title']}")
-        st.info(f"""
-        - **الرقم الأكثر ترجيحاً لـ Superzahl / Eurozahlen (بناءً على تكرار الأرشيف التاريخي لنفس اليوم):** 🔴 **{most_common_super}**
-        - **المعادلة الإحصائية المعتمدة لسحب 2026:**  
-          $$\\text{Prediction}_{2026} = \\left( (\\text{Day} \\times \\text{Month} \\times 2026) + (\\text{Archive Frequency Weight} \\times 13) \\right) \\pmod{\\text{Max Limit}}$$
-        - **النتيجة المحسوبة رياضياً لهذا التاريخ:** الرقم الأساسي المحسوب بالمعادلة هو **{calculated_2026_seed}** وتم دمج مصفوفة الأرشيف لتوليد التشكيلة الكاملة أدناه.
-        """)
+        st.info(
+            f"• الرقم الأكثر ترجيحاً لـ Superzahl / Eurozahlen (بناءً على تكرار الأرشيف التاريخي لنفس اليوم): {most_common_super}\n\n"
+            f"• المعادلة الإحصائية المعتمدة لسحب 2026:\n"
+            f"  Prediction_2026 = ((Day * Month * 2026) + (Archive Frequency Weight * 13)) mod Max Limit\n\n"
+            f"• النتيجة المحسوبة رياضياً لهذا التاريخ: الرقم الأساسي المحسوب بالمعادلة هو {calculated_2026_seed} وتم دمج مصفوفة الأرشيف لتوليد التشكيلة الكاملة."
+        )
 
         with st.expander(t["expander_title"]):
             st.dataframe(df, use_container_width=True)
@@ -395,12 +383,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
         with st.expander(t["schein_story_title"]):
             st.markdown("""
-            - **ما هو نظام السيستم شاين (Systemschein)؟**  
-              في السحوبات الرسمية (مثل ألمانيا)، بدلاً من اختيار الحد الأدنى فقط من الأرقام (Normalschein)، يتيح لك نظام السيستم اختيار عدد أكبر من الأرقام.
-            - **كيف يعمل؟**  
-              يقوم النظام الرياضي بتوليد **جميع التوليفات الممكنة** (Kombinationen) تلقائياً من مجموع الأرقام التي اخترتها.
-            - **الميزة الكبرى:**  
-              إذا أصبت عدة أرقام صحيحة ضمن مجموعة السيستم الخاصة بك، فإنك لا تربح جائزة واحدة فقط، بل تفوز بعدة جوائز تكميلية متضاعفة في نفس الوقت نظراً لتعدد الخطوط الرابحة!
+            - ما هو نظام السيستم شاين (Systemschein)؟ في السحوبات الرسمية (مثل ألمانيا)، بدلاً من اختيار الحد الأدنى فقط من الأرقام (Normalschein)، يتيح لك نظام السيستم اختيار عدد أكبر من الأرقام.
+            - كيف يعمل؟ يقوم النظام الرياضي بتوليد جميع التوليفات الممكنة (Kombinationen) تلقائياً من مجموع الأرقام التي اخترتها.
+            - الميزة الكبرى: إذا أصبت عدة أرقام صحيحة ضمن مجموعة السيستم الخاصة بك، فإنك لا تربح جائزة واحدة فقط، بل تفوز بعدة جوائز تكميلية متضاعفة في نفس الوقت نظراً لتعدد الخطوط الرابحة!
             """)
 
     gen_counter_key = f"counter_gen_{game_name}"
@@ -425,7 +410,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         
         if not is_euro:
             p_nums = sorted(np.random.choice(range(1, 50), selected_count, replace=False).tolist())
-            # فرض الرقم الأكثر ترجيحاً للسيستم أو السحب بناءً على تحليل السوبر زاهل
             p_super = most_common_super
             display_numbers(p_nums, p_super, "Superzahl (المحلل إحصائياً)")
         else:
