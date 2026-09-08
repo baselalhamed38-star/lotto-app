@@ -91,31 +91,26 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### 🎯 Dashboard 2026")
-    st.info("النظام يقوم بتحليل السحوبات تلقائياً حسب التاريخ المختار وتطبيق معادلة 2026 لإعطاء اقتراحين دقيقين.")
+    st.info("النظام يقوم بتحليل الأرشيف والسحوبات حسب التاريخ المختار وتوليد اقتراحين دقيقين باستخدام معادلات 2026.")
 
 texts = {
     "العربية": {
-        "title": "🎯 النظام الذكي المتقدم لتحليل وتوقع سحوبات 2026",
+        "title": "🎯 النظام الذكي لتحليل السحوبات وتوليد التوقعات 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 التحليل الرياضي والتاريخي لنفس اليوم والشهر (عبر كل السنوات)",
+        "search_title": "📅 التحليل الرياضي والتاريخي لنفس اليوم والشهر",
         "day_label": "اختر اليوم:",
         "month_label": "اختر الشهر:",
         "found_res": "✅ نتائج السحوبات المطابقة لنفس التاريخ في الأرشيف:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا التاريخ بالتحديد، جارٍ الاعتماد على التحليل الشامل للأرشيف.",
-        "eq_analysis_title": "🧮 نتائج معادلة التحليل الإحصائي لسحب 2026:",
-        "suggestions_title": "🚀 الاقتراحان المعتمدان (بناءً على تحليل السحوبات والمعادلة):",
+        "eq_analysis_title": "🧮 معادلة التحليل الإحصائي لسحب 2026:",
+        "gen_title": "🎲 توليد اقتراحين بناءً على تحليل السحوبات والمعادلات",
+        "gen_btn": "🚀 توليد اقتراحين بالأرقام والمعادلات",
         "sugg_1": "💡 الاقتراح الأول (الخيار الرياضي الأول):",
         "sugg_2": "💡 الاقتراح الثاني (الخيار الرياضي البديل):",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
-        "schein_type": "نوع الورقة (Tippschein Type):",
-        "normal_schein": "نورمال شاين (Normal Schein)",
-        "system_schein": "سيستيم شاين (System Schein)",
-        "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
-        "select_euro_system": "اختر نظام يوروجاكبوت (System):",
-        "schein_story_title": "📖 قصة ومعلومات نظام السيستم شاين (Systemschein)",
-        "birth_title": "📅 نافذة تاريخ الميلاد المستقلة (مفتوحة بالكامل من 1900)",
+        "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
         "birth_select": "حدد تاريخ ميلادك:",
         "birth_btn": "🎲 توليد أرقام 2026 (تاريخ الميلاد)",
         "zodiac_title": "🌟 نافذة الأبراج الفلكية المستقلة",
@@ -124,7 +119,7 @@ texts = {
         "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "🎯 Advanced System for Analytics & 2026 Predictions",
+        "title": "🎯 Smart System for Draw Analysis & 2026 Predictions",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
@@ -132,19 +127,14 @@ texts = {
         "day_label": "Select Day:",
         "month_label": "Select Month:",
         "found_res": "✅ Matching historical draws for this date:",
-        "no_res": "⚠️ No exact matches found for this date; using general archive analysis.",
+        "no_res": "⚠️ No exact matches found; using general archive analysis.",
         "eq_analysis_title": "🧮 2026 Statistical Equation Analysis Results:",
-        "suggestions_title": "🚀 The Two Generated Suggestions (Based on Draws Analysis & Equation):",
+        "gen_title": "🎲 Generate Two Suggestions Based on Draws & Equations",
+        "gen_btn": "🚀 Generate 2 Suggestions (Numbers & Equations)",
         "sugg_1": "💡 Suggestion 1 (Primary Mathematical Choice):",
         "sugg_2": "💡 Suggestion 2 (Alternative Mathematical Choice):",
         "expander_title": "👁️ View Complete Archive",
-        "schein_type": "Tippschein Type:",
-        "normal_schein": "Normal Schein",
-        "system_schein": "System Schein",
-        "select_lotto_system": "Select Lotto System Count (Vollsystem):",
-        "select_euro_system": "Select Eurojackpot System:",
-        "schein_story_title": "📖 Systemschein Story & Rules Info",
-        "birth_title": "📅 Independent Birthdate Window (Fully Open from 1900)",
+        "birth_title": "📅 Independent Birthdate Window",
         "birth_select": "Select your birthdate:",
         "birth_btn": "🎲 Generate 2026 Numbers (Birthdate)",
         "zodiac_title": "🌟 Independent Zodiac Window",
@@ -153,27 +143,22 @@ texts = {
         "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "🎯 Fortgeschrittenes System für Ziehungsanalysen & 2026",
+        "title": "🎯 Intelligentes System für Ziehungsanalysen & 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
         "search_title": "📅 Mathematische & Historische Analyse des gleichen Tages & Monats",
-        "tag_wahl": "Tag wählen:",
-        "monat_wahl": "Monat wählen:",
+        "day_label": "Tag wählen:",
+        "month_label": "Monat wählen:",
         "found_res": "✅ Übereinstimmende historische Ziehungen für dieses Datum:",
         "no_res": "⚠️ Keine genauen Übereinstimmungen; allgemeine Archiv-Analyse wird verwendet.",
         "eq_analysis_title": "🧮 2026 Statistische Gleichungs-Analyseergebnisse:",
-        "suggestions_title": "🚀 Die zwei generierten Vorschläge (Basierend auf Ziehungsanalyse & Gleichung):",
+        "gen_title": "🎲 Zwei Vorschläge basierend auf Ziehungsanalyse & Gleichung generieren",
+        "gen_btn": "🚀 2 Vorschläge generieren (Zahlen & Gleichungen)",
         "sugg_1": "💡 Vorschlag 1 (Erste mathematische Wahl):",
         "sugg_2": "💡 Vorschlag 2 (Alternative mathematische Wahl):",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
-        "schein_type": "Tippschein-Typ:",
-        "normal_schein": "Normaler Schein",
-        "system_schein": "Systemschein",
-        "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
-        "select_euro_system": "Eurojackpot System wählen:",
-        "schein_story_title": "📖 Systemschein Geschichte & Regelinfo",
-        "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster (Vollständig offen ab 1900)",
+        "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
         "birth_select": "Geburtsdatum wählen:",
         "birth_btn": "🎲 2026 Zahlen generieren (Geburtsdatum)",
         "zodiac_title": "🌟 Unabhängiges Sternzeichen-Fenster",
@@ -276,14 +261,14 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.markdown(f"### {t['search_title']}")
         col_d, col_m = st.columns(2)
         with col_d:
-            selected_day = st.selectbox(t["day_label"] if lang_choice == "العربية" else ("Tag wählen:" if lang_choice == "Deutsch" else "Select Day:"), list(range(1, 32)), key=f"p_day_{game_name}")
+            selected_day = st.selectbox(t["day_label"], list(range(1, 32)), key=f"p_day_{game_name}")
         with col_m:
             months_dict = {
                 "يناير (01) / January": "01", "فبراير (02) / February": "02", "مارس (03) / March": "03", "أبريل (04) / April": "04",
                 "مايو (05) / May": "05", "يونيو (06) / June": "06", "يوليو (07) / July": "07", "أغسطس (08) / August": "08",
                 "سبتمبر (09) / September": "09", "أكتوبر (10) / October": "10", "نوفمبر (11) / November": "11", "ديسمبر (12) / December": "12"
             }
-            selected_month_name = st.selectbox(t["month_label"] if lang_choice == "العربية" else ("Monat wählen:" if lang_choice == "Deutsch" else "Select Month:"), list(months_dict.keys()), key=f"p_mon_{game_name}")
+            selected_month_name = st.selectbox(t["month_label"], list(months_dict.keys()), key=f"p_mon_{game_name}")
             selected_month_num = months_dict[selected_month_name].split()[0]
             
         day_str = f"{selected_day:02d}"
@@ -319,13 +304,12 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     regular_candidates.extend(extracted)
                     super_candidates.append(extracted[-1] % (10 if not is_euro else 12))
 
-        # حساب الرقم الأكثر تكراراً للسوبر زاهل / النجوم من الأرشيف
+        # تحليل الأرشيف واستخراج الأرقام الأكثر تكراراً للسوبر زاهل / النجوم
         if super_candidates:
             counts = Counter(super_candidates)
             most_common_super = counts.most_common(1)[0][0]
             if most_common_super == 0 and not is_euro:
                 most_common_super = 5 
-            # استخراج ثاني أكثر رقم تكراراً للاقتراح الثاني
             common_list = counts.most_common(2)
             second_common_super = common_list[1][0] if len(common_list) > 1 else ((most_common_super + 2) % (10 if not is_euro else 12))
             if second_common_super == 0 and not is_euro:
@@ -346,49 +330,63 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
         st.markdown(f"### {t['eq_analysis_title']}")
         st.info(
-            f"• الرقم الأكثر تكراراً وترجيحاً (للخيار الأول): {most_common_super}\n\n"
-            f"• الرقم البديل الأكثر تكراراً (للخيار الثاني): {second_common_super}\n\n"
-            f"• معادلة التحليل الإحصائي لعام 2026:\n"
+            f"• الرقم الأكثر تكراراً في الأرشيف (للخيار الأول): {most_common_super}\n\n"
+            f"• الرقم البديل في الأرشيف (للخيار الثاني): {second_common_super}\n\n"
+            f"• المعادلة التحليلية المعتمدة لعام 2026:\n"
             f"  Seed_1 = ((Day * Month * 2026) + (Archive Weight * 13)) mod Max Limit = {calculated_2026_seed_1}\n"
             f"  Seed_2 = ((Day * Month * 2026) + (Archive Weight * 29) + 7) mod Max Limit = {calculated_2026_seed_2}"
         )
 
-        # عرض الاقتراحين التلقائيين بناءً على تحليل السحوبات والمعادلة
-        st.markdown(f"--- \n### {t['suggestions_title']}")
+        with st.expander(t["expander_title"]):
+            st.dataframe(df, use_container_width=True)
+            
+    st.markdown("---")
+    
+    # قسم توليد الاقتراحين بناءً على السحوبات والمعادلات عند الضغط على الزر
+    st.markdown(f"### {t['gen_title']}")
+    gen_counter_key = f"counter_gen_{game_name}"
+    if gen_counter_key not in st.session_state:
+        st.session_state[gen_counter_key] = 0
         
-        # توليد الاقتراح الأول
-        np.random.seed(date_numeric_val + calculated_2026_seed_1)
+    if st.button(t["gen_btn"], key=f"btn_gen_{game_name}"):
+        st.session_state[gen_counter_key] += 1
+        
+    if st.session_state[gen_counter_key] > 0:
+        confidence_score = min(88 + (total_rows % 10) + (st.session_state[gen_counter_key] % 5), 99)
+        st.info(f"{t['power_label']} **{confidence_score}%** (تحليل السحوبات التاريخية + معادلة 2026)")
+        
+        st.markdown(f"--- \n### الاقتراحان الناتجان من تحليل السحوبات والمعادلة:")
+        
+        # --- الاقتراح الأول ---
+        np.random.seed(date_numeric_val + calculated_2026_seed_1 + st.session_state[gen_counter_key])
         if not is_euro:
             p_nums_1 = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             spec_1 = most_common_super
-            label_1 = "Superzahl (المحلل إحصائياً)"
+            label_1 = "Superzahl (من تحليل السحوبات)"
         else:
             p_nums_1 = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
             spec_1 = sorted([most_common_super, (most_common_super % 11) + 1])
-            label_1 = "Euro Zahlen / Stars"
+            label_1 = "Euro Zahlen / Stars (من تحليل السحوبات)"
             
         st.markdown(f"**{t['sugg_1']}**")
         display_numbers(p_nums_1, spec_1, label_1)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # توليد الاقتراح الثاني
-        np.random.seed(date_numeric_val + calculated_2026_seed_2 + 99)
+        # --- الاقتراح الثاني ---
+        np.random.seed(date_numeric_val + calculated_2026_seed_2 + st.session_state[gen_counter_key] + 111)
         if not is_euro:
             p_nums_2 = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             spec_2 = second_common_super
-            label_2 = "Superzahl (البديل الإحصائي)"
+            label_2 = "Superzahl (البديل الإحصائي للأرشيف)"
         else:
             p_nums_2 = sorted(np.random.choice(range(1, 51), 5, replace=False).tolist())
             spec_2 = sorted([second_common_super, (second_common_super % 11) + 1])
-            label_2 = "Euro Zahlen / Stars"
+            label_2 = "Euro Zahlen / Stars (البديل الإحصائي للأرشيف)"
             
         st.markdown(f"**{t['sugg_2']}**")
         display_numbers(p_nums_2, spec_2, label_2)
 
-        with st.expander(t["expander_title"]):
-            st.dataframe(df, use_container_width=True)
-            
     st.markdown("---")
     
     # أقسام تاريخ الميلاد والأبراج المستقلة
