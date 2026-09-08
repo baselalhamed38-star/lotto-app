@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -42,7 +43,7 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات")
     lang_choice = st.selectbox("اختر اللغة:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("نظام عرض كافة السحوبات التاريخية المطابقة واستخراج معادلة 2026.")
+    st.info("نظام مطابقة اليوم والشهر معاً لاستخراج سحوبات الأرشيف ومعادلة 2026.")
 
 texts = {
     "العربية": {
@@ -50,11 +51,11 @@ texts = {
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 كافة السحوبات التاريخية المطابقة لنفس اليوم والشهر (عبر كل السنوات):",
+        "search_title": "📅 مطابقة السحوبات التاريخية لنفس (اليوم والشهر معاً) عبر كل السنوات:",
         "day_label": "اختر اليوم:",
         "month_label": "اختر الشهر:",
-        "found_res": "✅ السحوبات التاريخية المطابقة لنفس اليوم والشهر:",
-        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا التاريخ بالتحديد.",
+        "found_res": "✅ السحوبات التاريخية المطابقة لتاريخ اليوم والشهر المحدد:",
+        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر معاً بالتحديد.",
         "eq_analysis_title": "🧮 معادلة السحب المستخرجة من الأرشيف لعام 2026:",
         "gen_title": "🎲 توليد احتمالات واقتراحات سحب 2026",
         "gen_btn": "🚀 توليد اقتراحي المعادلة للسحب القادم",
@@ -68,11 +69,11 @@ texts = {
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 All Historical Draws Matching Same Day & Month:",
+        "search_title": "📅 Historical Draws Matching Exact Day & Month Across All Years:",
         "day_label": "Select Day:",
         "month_label": "Select Month:",
-        "found_res": "✅ Matching historical draws:",
-        "no_res": "⚠️ No exact matches found.",
+        "found_res": "✅ Matching historical draws for this exact Day and Month:",
+        "no_res": "⚠️ No exact matches found for this Day and Month.",
         "eq_analysis_title": "🧮 2026 Draw Equation Extracted from Archive:",
         "gen_title": "🎲 Generate 2026 Predictions",
         "gen_btn": "🚀 Generate Suggestions",
@@ -86,11 +87,11 @@ texts = {
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Dateien:",
-        "search_title": "📅 Alle historischen Ziehungen des gleichen Datums:",
+        "search_title": "📅 Historische Ziehungen des genauen Tages & Monats:",
         "day_label": "Tag wählen:",
         "month_label": "Monat wählen:",
         "found_res": "✅ Übereinstimmende historische Ziehungen:",
-        "no_res": "⚠️ Keine Übereinstimmungen gefunden.",
+        "no_res": "⚠️ Keine Übereinstimmungen für diesen Tag und Monat.",
         "eq_analysis_title": "🧮 2026 Gleichung aus dem Archiv:",
         "gen_title": "🎲 Vorhersagen generieren",
         "gen_btn": "🚀 Vorschläge generieren",
@@ -177,16 +178,21 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
         selected_month_num = months_dict[selected_month_name]
         
     day_str = f"{selected_day:02d}"
+    day_int = int(selected_day)
+    month_int = int(selected_month_num)
+    
     df_str = df.astype(str)
     
-    # أنماط بحث متعددة لضمان التقاط كل الصيغ التاريخية في الإكسل
-    p_dot = f".*\\b{day_str}\\.{selected_month_num}\\b.*"
-    p_slash = f".*\\b{int(day_str)}/{int(selected_month_num)}/.*"
-    p_dot_single = f".*\\b{int(day_str)}\\.{int(selected_month_num)}\\b.*"
+    # مطابقة دقيقة لليوم والشهر معاً بالصيغ المختلفة (مثل 08.09. أو 8.9 أو 08/09)
+    p_exact_dot = f".*\\b{day_str}\\.{selected_month_num}\\b.*"
+    p_exact_dot_single = f".*\\b{day_int}\\.{month_int}\\b.*"
+    p_exact_slash = f".*\\b{day_int}/{month_int}/.*"
+    p_exact_slash_leading = f".*\\b{day_str}/{selected_month_num}/.*"
     
-    mask = df_str.apply(lambda x: x.str.contains(p_dot, regex=True, case=False, na=False) |
-                                  x.str.contains(p_slash, regex=True, case=False, na=False) |
-                                  x.str.contains(p_dot_single, regex=True, case=False, na=False)).any(axis=1)
+    mask = df_str.apply(lambda x: x.str.contains(p_exact_dot, regex=True, case=False, na=False) |
+                                  x.str.contains(p_exact_dot_single, regex=True, case=False, na=False) |
+                                  x.str.contains(p_exact_slash, regex=True, case=False, na=False) |
+                                  x.str.contains(p_exact_slash_leading, regex=True, case=False, na=False)).any(axis=1)
     res_date = df[mask]
     
     all_extracted_sums = []
@@ -195,7 +201,6 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
     st.markdown(f"### {t['search_title']}")
     if not res_date.empty:
         st.success(f"{t['found_res']} ({day_str}/{selected_month_num}) — عدد السحوبات المطابقة: {len(res_date)}")
-        # عرض كافة السحوبات المطابقة بجدول واضح تماماً
         st.dataframe(res_date, use_container_width=True)
         
         for _, r in res_date.iterrows():
@@ -218,19 +223,19 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
     avg_sum = int(np.mean(all_extracted_sums)) if all_extracted_sums else 120
     max_limit = 50 if is_euro else 49
     
-    eq_val_1 = (avg_sum * selected_day + 2026) % max_limit
+    eq_val_1 = (avg_sum * day_int + 2026) % max_limit
     if eq_val_1 == 0: eq_val_1 = 1
     
-    eq_val_2 = (avg_sum * len(res_date) + 43) % max_limit
+    eq_val_2 = (avg_sum * max(len(res_date), 1) + 43) % max_limit
     if eq_val_2 == 0: eq_val_2 = 2
 
     st.markdown(f"### {t['eq_analysis_title']}")
     st.info(
         f"• تحليل السحوبات المطابقة:\n"
-        f"  - عدد السحوبات التاريخية في هذا اليوم: `{len(res_date)}` سحوبات\n"
+        f"  - عدد السحوبات التاريخية في هذا اليوم والشهر: `{len(res_date)}` سحوبات\n"
         f"  - متوسط مجموع الأرقام السابقة: `{avg_sum}`\n\n"
         f"• معادلة سحب 2026 المستخرجة:\n"
-        f"  - Equation_1 = ((Avg_Sum({avg_sum}) * Day({selected_day})) + 2026) mod {max_limit} = {eq_val_1}\n"
+        f"  - Equation_1 = ((Avg_Sum({avg_sum}) * Day({day_int})) + 2026) mod {max_limit} = {eq_val_1}\n"
         f"  - Equation_2 = ((Avg_Sum({avg_sum}) * Count({len(res_date)})) + 43) mod {max_limit} = {eq_val_2}"
     )
 
