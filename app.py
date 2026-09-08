@@ -91,7 +91,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### 🎯 Dashboard 2026")
-    st.info("تحليل السحوبات السابقة في نفس اليوم + معادلة تاريخ 2026 لتوليد اقتراحين متكاملين بضغطة زر واحدة.")
+    st.info("تحليل السحوبات السابقة في نفس اليوم + معادلة تاريخ 2026 الديناميكية لكل لعبة بضغطة زر.")
 
 texts = {
     "العربية": {
@@ -318,22 +318,24 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             most_common_super = 7 if not is_euro else 3
             second_common_super = 4 if not is_euro else 7
 
-        # بناء معادلة 2026 بناءً على تاريخ اليوم والسحب القادم
-        date_numeric_val = int(day_str) * int(selected_month_num) * 2026
-        freq_factor = len(regular_candidates) % 7 if regular_candidates else 3
-        max_limit = 50 if is_euro else 49
+        # تحديد النطاق الصحيح حصرياً بناءً على اللعبة (اللوتو 49، اليوروجاكبوت 50) ووزن أرشيف مختلف لكل لعبة
+        game_multiplier = 31 if not is_euro else 47
+        max_limit = 49 if not is_euro else 50
         
-        eq_seed_1 = (date_numeric_val + (freq_factor * 17) + 2026) % max_limit
+        date_numeric_val = int(day_str) * int(selected_month_num) * 2026
+        archive_weight = len(regular_candidates) * game_multiplier
+        
+        eq_seed_1 = (date_numeric_val + archive_weight + 2026) % max_limit
         if eq_seed_1 == 0: eq_seed_1 = 1
         
-        eq_seed_2 = (date_numeric_val + (freq_factor * 31) + 43) % max_limit
+        eq_seed_2 = (date_numeric_val + (archive_weight * 2) + 43) % max_limit
         if eq_seed_2 == 0: eq_seed_2 = 2
 
         st.markdown(f"### {t['eq_analysis_title']}")
         st.info(
             f"• المعادلة التحليلية الرسمية لسحب 2026 (تاريخ السحب: {day_str}/{selected_month_num}/2026):\n\n"
-            f"  [الخيار الأول] ➔ Equation_1 = ((Day * Month * 2026) + (Archive Weight * 17) + 2026) mod {max_limit} = {eq_seed_1}\n\n"
-            f"  [الخيار الثاني] ➔ Equation_2 = ((Day * Month * 2026) + (Archive Weight * 31) + 43) mod {max_limit} = {eq_seed_2}\n\n"
+            f"  [الخيار الأول] ➔ Equation_1 = ((Day * Month * 2026) + (Archive Weight * {game_multiplier}) + 2026) mod {max_limit} = {eq_seed_1}\n\n"
+            f"  [الخيار الثاني] ➔ Equation_2 = ((Day * Month * 2026) + (Archive Weight * {game_multiplier * 2}) + 43) mod {max_limit} = {eq_seed_2}\n\n"
             f"• تكرار السوبر زاهل / النجوم المستخرج من أرشيف نفس اليوم: الأساسي ({most_common_super}) | البديل ({second_common_super})"
         )
 
@@ -358,7 +360,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.markdown(f"--- \n### 🎯 الاقتراحان الناتجان عن طريق معادلة السحب القادم:")
         
         # --- الاقتراح الأول ---
-        np.random.seed(date_numeric_val + eq_seed_1 + (st.session_state[gen_counter_key] * 11))
+        np.random.seed(date_numeric_val + eq_seed_1 + (st.session_state[gen_counter_key] * (11 if not is_euro else 19)))
         if not is_euro:
             p_nums_1 = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             spec_1 = most_common_super
@@ -374,7 +376,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.markdown("<br>", unsafe_allow_html=True)
         
         # --- الاقتراح الثاني ---
-        np.random.seed(date_numeric_val + eq_seed_2 + (st.session_state[gen_counter_key] * 33) + 77)
+        np.random.seed(date_numeric_val + eq_seed_2 + (st.session_state[gen_counter_key] * (33 if not is_euro else 41)) + 77)
         if not is_euro:
             p_nums_2 = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
             spec_2 = second_common_super
