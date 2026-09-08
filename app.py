@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -43,7 +42,7 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات")
     lang_choice = st.selectbox("اختر اللغة:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("نظام مطابقة اليوم والشهر معاً لاستخراج سحوبات الأرشيف ومعادلة 2026.")
+    st.info("نظام الفلترة الدقيقة لتاريخ السحب (اليوم والشهر حصراً).")
 
 texts = {
     "العربية": {
@@ -51,11 +50,11 @@ texts = {
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات التاريخية لنفس (اليوم والشهر معاً) عبر كل السنوات:",
+        "search_title": "📅 سحوبات الأرشيف المطابقة لـ (اليوم والشهر) حصراً عبر كل السنوات:",
         "day_label": "اختر اليوم:",
         "month_label": "اختر الشهر:",
-        "found_res": "✅ السحوبات التاريخية المطابقة لتاريخ اليوم والشهر المحدد:",
-        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر معاً بالتحديد.",
+        "found_res": "✅ السحوبات التاريخية المطابقة لتاريخ اليوم والشهر المحدد بدقة:",
+        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر معاً.",
         "eq_analysis_title": "🧮 معادلة السحب المستخرجة من الأرشيف لعام 2026:",
         "gen_title": "🎲 توليد احتمالات واقتراحات سحب 2026",
         "gen_btn": "🚀 توليد اقتراحي المعادلة للسحب القادم",
@@ -69,10 +68,10 @@ texts = {
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Historical Draws Matching Exact Day & Month Across All Years:",
+        "search_title": "📅 Historical Draws Matching Exact Day & Month Only:",
         "day_label": "Select Day:",
         "month_label": "Select Month:",
-        "found_res": "✅ Matching historical draws for this exact Day and Month:",
+        "found_res": "✅ Matching historical draws for exact Day and Month:",
         "no_res": "⚠️ No exact matches found for this Day and Month.",
         "eq_analysis_title": "🧮 2026 Draw Equation Extracted from Archive:",
         "gen_title": "🎲 Generate 2026 Predictions",
@@ -87,11 +86,11 @@ texts = {
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Dateien:",
-        "search_title": "📅 Historische Ziehungen des genauen Tages & Monats:",
+        "search_title": "📅 Historische Ziehungen des exakten Tages & Monats:",
         "day_label": "Tag wählen:",
         "month_label": "Monat wählen:",
-        "found_res": "✅ Übereinstimmende historische Ziehungen:",
-        "no_res": "⚠️ Keine Übereinstimmungen für diesen Tag und Monat.",
+        "found_res": "✅ Exakte Übereinstimmungen:",
+        "no_res": "⚠️ Keine Übereinstimmungen.",
         "eq_analysis_title": "🧮 2026 Gleichung aus dem Archiv:",
         "gen_title": "🎲 Vorhersagen generieren",
         "gen_btn": "🚀 Vorschläge generieren",
@@ -152,6 +151,31 @@ def extract_all_ints(row):
                     nums.append(n)
     return nums
 
+def filter_by_exact_date(df, target_day, target_month):
+    matched_rows = []
+    for _, row in df.iterrows():
+        matched = False
+        for val in row.values:
+            if pd.notna(val):
+                val_str = str(val).strip()
+                # محاولة تحويل الخلية إلى تاريخ لفحص اليوم والشهر بدقة
+                try:
+                    dt = pd.to_datetime(val_str, errors='coerce')
+                    if pd.notna(dt) and dt.day == target_day and dt.month == target_month:
+                        matched = True
+                        break
+                except:
+                    pass
+                
+                # فحص النصوص الاحتياطية (مثل الصيغ اليدوية dd.mm أو dd/mm)
+                if re.search(rf'(^|\D0?){target_day}\.{target_month}(\D|$)', val_str) or \
+                   re.search(rf'(^|\D0?){target_day}/{target_month}(/|\D|$)', val_str):
+                    matched = True
+                    break
+        if matched:
+            matched_rows.append(row)
+    return pd.DataFrame(matched_rows) if matched_rows else pd.DataFrame(columns=df.columns)
+
 def run_analytics(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'General'}`")
     if df.empty:
@@ -170,37 +194,22 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
         selected_day = st.selectbox(t["day_label"], list(range(1, 32)), key=f"d_{game_name}")
     with col_m:
         months_dict = {
-            "يناير (01)": "01", "فبراير (02)": "02", "مارس (03)": "03", "أبريل (04)": "04",
-            "مايو (05)": "05", "يونيو (06)": "06", "يوليو (07)": "07", "أغسطس (08)": "08",
-            "سبتمبر (09)": "09", "أكتوبر (10)": "10", "نوفمبر (11)": "11", "ديسمبر (12)": "12"
+            "يناير (01)": 1, "فبراير (02)": 2, "مارس (03)": 3, "أبريل (04)": 4,
+            "مايو (05)": 5, "يونيو (06)": 6, "يوليو (07)": 7, "أغسطس (08)": 8,
+            "سبتمبر (09)": 9, "أكتوبر (10)": 10, "نوفمبر (11)": 11, "ديسمبر (12)": 12
         }
         selected_month_name = st.selectbox(t["month_label"], list(months_dict.keys()), key=f"m_{game_name}")
         selected_month_num = months_dict[selected_month_name]
         
-    day_str = f"{selected_day:02d}"
-    day_int = int(selected_day)
-    month_int = int(selected_month_num)
-    
-    df_str = df.astype(str)
-    
-    # مطابقة دقيقة لليوم والشهر معاً بالصيغ المختلفة (مثل 08.09. أو 8.9 أو 08/09)
-    p_exact_dot = f".*\\b{day_str}\\.{selected_month_num}\\b.*"
-    p_exact_dot_single = f".*\\b{day_int}\\.{month_int}\\b.*"
-    p_exact_slash = f".*\\b{day_int}/{month_int}/.*"
-    p_exact_slash_leading = f".*\\b{day_str}/{selected_month_num}/.*"
-    
-    mask = df_str.apply(lambda x: x.str.contains(p_exact_dot, regex=True, case=False, na=False) |
-                                  x.str.contains(p_exact_dot_single, regex=True, case=False, na=False) |
-                                  x.str.contains(p_exact_slash, regex=True, case=False, na=False) |
-                                  x.str.contains(p_exact_slash_leading, regex=True, case=False, na=False)).any(axis=1)
-    res_date = df[mask]
+    # فلترة دقيقة تعتمد على اليوم والشهر حصراً
+    res_date = filter_by_exact_date(df, selected_day, selected_month_num)
     
     all_extracted_sums = []
     past_stars = []
     
     st.markdown(f"### {t['search_title']}")
     if not res_date.empty:
-        st.success(f"{t['found_res']} ({day_str}/{selected_month_num}) — عدد السحوبات المطابقة: {len(res_date)}")
+        st.success(f"{t['found_res']} ({selected_day:02d}/{selected_month_num:02d}) — عدد السحوبات المطابقة: {len(res_date)}")
         st.dataframe(res_date, use_container_width=True)
         
         for _, r in res_date.iterrows():
@@ -223,7 +232,7 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
     avg_sum = int(np.mean(all_extracted_sums)) if all_extracted_sums else 120
     max_limit = 50 if is_euro else 49
     
-    eq_val_1 = (avg_sum * day_int + 2026) % max_limit
+    eq_val_1 = (avg_sum * selected_day + 2026) % max_limit
     if eq_val_1 == 0: eq_val_1 = 1
     
     eq_val_2 = (avg_sum * max(len(res_date), 1) + 43) % max_limit
@@ -235,7 +244,7 @@ def run_analytics(df, game_name, matched_files, is_euro=False):
         f"  - عدد السحوبات التاريخية في هذا اليوم والشهر: `{len(res_date)}` سحوبات\n"
         f"  - متوسط مجموع الأرقام السابقة: `{avg_sum}`\n\n"
         f"• معادلة سحب 2026 المستخرجة:\n"
-        f"  - Equation_1 = ((Avg_Sum({avg_sum}) * Day({day_int})) + 2026) mod {max_limit} = {eq_val_1}\n"
+        f"  - Equation_1 = ((Avg_Sum({avg_sum}) * Day({selected_day})) + 2026) mod {max_limit} = {eq_val_1}\n"
         f"  - Equation_2 = ((Avg_Sum({avg_sum}) * Count({len(res_date)})) + 43) mod {max_limit} = {eq_val_2}"
     )
 
