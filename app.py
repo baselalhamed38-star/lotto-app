@@ -120,6 +120,7 @@ texts = {
         "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
         "select_euro_system": "اختر نظام يوروجاكبوت (System):",
         "schein_story_title": "📖 قصة ومعلومات نظام السيستم شاين (Systemschein)",
+        "gen_title": "🎲 مركز توليد التوقعات الذكية (حسب الأرشيف وتحليل السحوبات)",
         "gen_btn": "🚀 توليد الأرقام والتحليل الاعتيادي",
         "birth_title": "📅 نافذة تاريخ الميلاد المستقلة (مفتوحة بالكامل)",
         "birth_select": "حدد تاريخ ميلادك:",
@@ -148,6 +149,7 @@ texts = {
         "select_lotto_system": "Select Lotto System Count (Vollsystem):",
         "select_euro_system": "Select Eurojackpot System:",
         "schein_story_title": "📖 Systemschein Story & Rules Info",
+        "gen_title": "🎲 Smart Prediction Center (Archive Analysis)",
         "gen_btn": "🚀 Generate Numbers & Standard Analysis",
         "birth_title": "📅 Independent Birthdate Window (Fully Open)",
         "birth_select": "Select your birthdate:",
@@ -176,6 +178,7 @@ texts = {
         "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
         "select_euro_system": "Eurojackpot System wählen:",
         "schein_story_title": "📖 Systemschein Geschichte & Regelinfo",
+        "gen_title": "🎲 Intelligentes Prognose-Center (Archiv-Analyse)",
         "gen_btn": "🚀 Zahlen & Standard-Analyse generieren",
         "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster (Vollständig offen)",
         "birth_select": "Geburtsdatum wählen:",
@@ -329,13 +332,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[analysis_counter_key] += 1
         
     if st.session_state[analysis_counter_key] > 0:
-        # استخراج الأرقام من الأرشيف لنفس اليوم والشهر لاستخدامها في معادلة التوقع
         extracted_numbers_pool = []
         if not res_date.empty:
             for _, r_row in res_date.iterrows():
                 for val in r_row.values:
                     if pd.notna(val):
-                        # محاولة استخراج الأرقام الصحيحة ضمن نطاق اللعبة
                         nums_found = re.findall(r'\b\d{1,2}\b', str(val))
                         for n in nums_found:
                             num_int = int(n)
@@ -343,7 +344,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                             if 1 <= num_int <= max_val:
                                 extracted_numbers_pool.append(num_int)
         
-        # إذا لم تتوفر أرقام كافية في نفس التاريخ، نأخذ عينة من الأرشيف العام لضمان دقة المعادلة
         if len(extracted_numbers_pool) < 10:
             for _, r_row in df.head(50).iterrows():
                 for val in r_row.values:
@@ -354,11 +354,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                         if 1 <= num_int <= max_val:
                             extracted_numbers_pool.append(num_int)
                             
-        # حساب معادلة التردد والوسط الحسابي وانحراف 2026
         base_seed = (selected_day * 31) + (selected_month_num * 12) + 2026 + st.session_state[analysis_counter_key]
         np.random.seed(base_seed)
         
-        # استنتاج خلاصة المعادلة الرياضية بناءً على الأرشيف
         common_freq_avg = int(np.mean(extracted_numbers_pool)) if extracted_numbers_pool else (25 if is_euro else 24)
         equation_offset = (selected_day + selected_month_num) % 7
         
@@ -382,11 +380,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         special_name = "Euro Zahlen (Stars)" if is_euro else "Superzahl"
         
         for i in range(1, 5):
-            # توليد كل احتمال بـ seed مختلف بناءً على المعادلة
             sub_seed = base_seed + (i * 137)
             np.random.seed(sub_seed)
             
-            # دمج أرقام الأرشيف مع التوزيع العشوائي الموجه (Weighted Hybrid Simulation)
             if extracted_numbers_pool and len(extracted_numbers_pool) >= pick_count:
                 p_nums = sorted(np.random.choice(list(set(extracted_numbers_pool)), min(pick_count, len(set(extracted_numbers_pool))), replace=False).tolist())
                 while len(p_nums) < pick_count:
@@ -412,7 +408,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # باقي الأقسام (توليد اعتيادي، تاريخ الميلاد، والأبراج)
     st.markdown(f"### {t['gen_title']}")
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
     
@@ -453,7 +448,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         with st.expander(t["schein_story_title"]):
             st.markdown("""
             - **ما هو نظام السيستم شاين (Systemschein)؟**  
-              في السحوبات الرسمية (مثل ألمانيا)، بدلاً من اختيار الحد الأدنى فقط من الأرقام (Normalschein), يتيح لك نظام السيستم اختيار عدد أكبر من الأرقام.
+              في السحوبات الرسمية (مثل ألمانيا)، بدلاً من اختيار الحد الأدنى فقط من الأرقام (Normalschein)، يتيح لك نظام السيستم اختيار عدد أكبر من الأرقام.
             - **كيف يعمل؟**  
               يقوم النظام الرياضي بتوليد **جميع التوليفات الممكنة** (Kombinationen) تلقائياً من مجموع الأرقام التي اخترتها.
             - **الميزة الكبرى:**  
