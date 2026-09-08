@@ -330,7 +330,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[analysis_counter_key] += 1
         
     if st.session_state[analysis_counter_key] > 0:
-        # استخراج الأرقام الفعلية من سحوبات نفس اليوم
         exact_date_numbers = []
         if not res_date.empty:
             for _, r_row in res_date.iterrows():
@@ -343,7 +342,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                             if 1 <= num_int <= max_val:
                                 exact_date_numbers.append(num_int)
                                 
-        # استخراج الأرقام من الأرشيف العام
         all_archive_numbers = []
         for _, r_row in df.iterrows():
             for val in r_row.values:
@@ -358,13 +356,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         counter_exact = Counter(exact_date_numbers)
         counter_all = Counter(all_archive_numbers)
         
-        # تطبيق معادلة الأوزان W(N) لكل رقم
         max_num_limit = 50 if is_euro else 49
         weights = {}
         for num in range(1, max_num_limit + 1):
             f_date = counter_exact.get(num, 0)
             f_global = counter_all.get(num, 0)
-            # المعادلة الرياضية للأوزان والترددات
             weights[num] = (f_date * 5) + (f_global * 1) + ((selected_day + selected_month_num) / (num + 1))
             
         sorted_weighted_nums = sorted(weights.keys(), key=lambda x: weights[x], reverse=True)
@@ -374,7 +370,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             <h4>📋 تقرير معادلة الأوزان والترددات لتاريخ ({selected_day:02d}/{selected_month_num:02d}) عام 2026:</h4>
             <ul>
                 <li><b>الأرقام الأعلى وزناً وتردداً في هذا الموسم:</b> <code>{sorted_weighted_nums[:6]}</code></li>
-                <li><b>آلية الحساب:</b> تم دمج تردد نفس اليوم التاريخي ($F_{\\text{date}}$) مع التردد العام ($F_{\\text{global}}$) مع عامل التصحيح الزمني لتوليد مصفوفة الأوزان.</li>
+                <li><b>آلية الحساب:</b> تم دمج تردد نفس اليوم التاريخي مع التردد العام في الأرشيف مع عامل التصحيح الزمني لتوليد مصفوفة الأوزان بدقة.</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -404,7 +400,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # قسم التوليد الاعتيادي وسيستم شاين
     st.markdown(f"### {t['gen_title']}")
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
     
@@ -479,7 +474,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # قسم تاريخ الميلاد
     st.markdown(f"### {t['birth_title']}")
     birth_date = st.date_input(
         t["birth_select"], 
@@ -515,7 +509,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # قسم الأبراج الفلكية
     st.markdown(f"### {t['zodiac_title']}")
     zodiac_list = [
         "الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", 
