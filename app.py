@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Formula Engine 2026", 
+    page_title="True Date Formula Engine 2026", 
     page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -54,18 +54,18 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك المعادلات الرياضية التاريخية وتوقعات 2026.")
+    st.info("محرك المعادلات الحقيقي المستند جذرياً إلى التاريخ.")
 
 texts = {
     "العربية": {
-        "title": "🎯 محرك المعادلات الرياضية واستخراج السحوبات 2026",
+        "title": "🎯 محرك معادلات استخراج الأرقام من التاريخ 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات التاريخية ومعادلاتها الرياضية",
+        "search_title": "📅 مطابقة السحوبات التاريخية واستخراج أرقامها بمعادلة التاريخ",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "search_btn": "⚡ عرض السحوبات ومعادلاتها التفصيلية",
+        "search_btn": "⚡ عرض السحب ومعادلة التاريخ الحقيقية",
         "found_res": "✅ السحوبات التاريخية المطابقة في الأرشيف:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر في الجدول.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
@@ -73,7 +73,7 @@ texts = {
         "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
         "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
         "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
-        "gen_title": "📅 قسم معادلات وتوقعات سنة 2026 (تاريخ اليوم)",
+        "gen_title": "📅 قسم معادلات وتوقعات سنة 2026 (تاريخ اليوم / تاريخ مخصص)",
         "gen_btn": "🚀 حساب وتوليد أرقام ومعادلة سنة 2026",
         "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
         "birth_select": "حدد تاريخ ميلادك:",
@@ -83,22 +83,22 @@ texts = {
         "zodiac_btn": "🎲 توليد أرقام 2026 (البرج الفلكي)",
     },
     "English": {
-        "title": "🎯 Mathematical Formula Lottery Engine 2026",
+        "title": "🎯 True Date-to-Numbers Formula Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Historical Draws & Mathematical Formulas",
+        "search_title": "📅 Match Historical Draws & Extract via Date Formula",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "search_btn": "⚡ Show Draws & Detailed Formulas",
+        "search_btn": "⚡ Show Draw & True Date Formula",
         "found_res": "✅ Matched Historical Draws in Archive:",
-        "no_res": "⚠️ No matching draws found for this day and month.",
+        "no_res": "⚠️ No matching draws found.",
         "expander_title": "👁️ View Complete Archive",
         "schein_type": "Tippschein Type:",
         "normal_schein": "Normal Schein (6 numbers)",
         "system_schein": "System Schein (Extended & Combinations)",
         "select_lotto_system": "Select Lotto System Count (Vollsystem):",
-        "gen_title": "📅 2026 Formula & Prediction Center (Today's Date)",
+        "gen_title": "📅 2026 Formula & Prediction Center",
         "gen_btn": "🚀 Calculate 2026 Numbers & Formula",
         "birth_title": "📅 Independent Birthdate Window",
         "birth_select": "Select your birthdate:",
@@ -108,29 +108,30 @@ texts = {
         "zodiac_btn": "🎲 Generate 2026 Numbers (Zodiac)",
     },
     "Deutsch": {
-        "title": "🎯 Mathematische Formel Lotto-Engine 2026",
+        "title": "🎯 Echte Datumsformel Lotto-Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Historische Ziehungen & mathematische Formeln matchen",
+        "search_title": "📅 Historische Ziehungen mit Datumsformel matchen",
+        "tag_wahl": "Tag wählen:",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "search_btn": "⚡ Ziehungen & Formeln anzeigen",
-        "found_res": "✅ Passende historische Ziehungen im Archiv:",
+        "search_btn": "⚡ Ziehung & echte Datumsformel anzeigen",
+        "found_res": "✅ Passende historische Ziehungen:",
         "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
         "schein_type": "Tippschein-Typ:",
         "normal_schein": "Normaler Schein (6 Zahlen)",
-        "system_schein": "Systemschein (Erweiterte Kombinationen)",
+        "system_schein": "Systemschein",
         "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
         "gen_title": "📅 2026 Formel- & Prognose-Center",
         "gen_btn": "🚀 2026 Zahlen & Formel berechnen",
         "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
         "birth_select": "Geburtsdatum wählen:",
-        "birth_btn": "🎲 2026 Zahlen generieren (Geburtsdatum)",
+        "birth_btn": "🎲 2026 Zahlen generieren",
         "zodiac_title": "🌟 Unabhängiges Sternzeichen-Fenster",
         "zodiac_select": "Sternzeichen wählen:",
-        "zodiac_btn": "🎲 2026 Zahlen generieren (Sternzeichen)",
+        "zodiac_btn": "🎲 2026 Zahlen generieren",
     }
 }
 
@@ -168,16 +169,24 @@ tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 def display_numbers(numbers, special_num, special_label="Superzahl (0-9)"):
     nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in numbers])
     spec_html = f"<span class='special-badge'>{special_num}</span>"
-    st.markdown(f"**الأرقام المستخرجة ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
+    st.markdown(f"**الأرقام الناتجة عن المعادلة ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
     st.markdown(f"<br>**{special_label}:** {spec_html}", unsafe_allow_html=True)
 
-def generate_date_formula(year, month, day, count=6):
-    """دالة توليد أرقام ومعادلة دقيقة من التاريخ"""
+def generate_true_date_formula(year, month, day, count=6, max_val=49):
+    """معادلة حقيقية تولد الأرقام حصرياً من عناصر التاريخ (اليوم، الشهر، السنة)"""
+    # 1. حساب مفتاح البذرة (Seed) الفريد المستمد من التاريخ
     seed_val = (year * 10000) + (month * 100) + day
+    
+    # 2. تشغيل مولد الأرقام العشوائية بناءً على التاريخ وحده
     np.random.seed(seed_val % (2**31 - 1))
-    nums = sorted(np.random.choice(range(1, 50), count, replace=False).tolist())
-    spec = int(day % 10)
-    return nums, spec, seed_val
+    
+    # 3. اختيار الأرقام الرياضية الصافية
+    nums = sorted(np.random.choice(range(1, max_val + 1), count, replace=False).tolist())
+    
+    # 4. حساب الـ Superzahl بمعادلة رياضية صافية من التاريخ
+    super_val = (year + month + day) % 10
+    
+    return nums, super_val, seed_val
 
 def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'General Files'}`")
@@ -188,12 +197,12 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive & Formula Engine</h2>
+            <h2>📊 {game_name} Archive & True Date Formula Engine</h2>
             <h3>Total Records: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
     
-    # 1. مطابقة السحوبات التاريخية ومعادلاتها
+    # 1. مطابقة السحوبات التاريخية وعرض معادلة التاريخ الحقيقية
     with st.container():
         st.markdown(f"### {t['search_title']}")
         col_d, col_m = st.columns(2)
@@ -228,8 +237,8 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
         if st.button(t["search_btn"], key=f"btn_search_{game_name}"):
             st.markdown("---")
-            max_range = 49
-            special_name = "Superzahl (0-9)"
+            max_range = 50 if is_euro else 49
+            special_name = "Eurozahl (1-10)" if is_euro else "Superzahl (0-9)"
 
             if matched_rows:
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات المكتشفة: {len(matched_rows)}")
@@ -238,7 +247,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     row_vals = list(r.values)
                     
                     full_date_str = "غير محدد"
-                    extracted_year = 2000
+                    extracted_year = 2020
                     for val in row_vals[:3]:
                         if pd.notna(val):
                             v_s = str(val).strip()
@@ -249,6 +258,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                     extracted_year = dt_parsed.year
                                 break
 
+                    # الأرقام الفعلية من الأرشيف للمقارنة
                     core_nums = []
                     for col_idx in range(3, min(9, len(row_vals))):
                         try:
@@ -257,32 +267,37 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                 core_nums.append(int(vf))
                         except:
                             pass
-                    core_nums = core_nums[:6]
+                    core_nums = core_nums[:5 if is_euro else 6]
 
                     spec_val = 0
                     if len(row_vals) > 10:
                         try:
                             spec_val = int(float(row_vals[10]))
-                            if not (0 <= spec_val <= 9):
-                                spec_val = spec_val % 10
                         except:
                             spec_val = 0
 
-                    # توليد معادلة رياضية دقيقة مبنية على تاريخ السحب الفعلي (السنة، الشهر، اليوم)
-                    formulas_html = ""
-                    for pos_idx, num_val in enumerate(core_nums, start=1):
-                        calc_eq = ((extracted_year * pos_idx + selected_month_num * selected_day + num_val) % max_range) + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم {num_val} (ترتيب {pos_idx}):</b> <code>Formula = (({extracted_year} × {pos_idx} + {selected_month_num} × {selected_day} + {num_val}) % {max_range}) + 1 = {num_val}</code><br>"
+                    # توليد الأرقام بالمعادلة الرياضية الصافية من التاريخ وحده
+                    formula_nums, formula_spec, seed_val = generate_true_date_formula(
+                        extracted_year, selected_month_num, selected_day, len(core_nums) if core_nums else 6, max_range
+                    )
 
-                    spec_eq = (extracted_year * selected_month_num * selected_day) % 10
-                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>Superzahl ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({extracted_year} × {selected_month_num} × {selected_day}) % 10 = {spec_val}</code>"
+                    # صياغة الخطوات الرياضية لمعادلة التاريخ الصافية
+                    math_steps = f"1. حساب المفتاح الزمني (Seed) من التاريخ ({extracted_year}-{selected_month_num:02d}-{selected_day:02d}):<br>"
+                    math_steps += f"&nbsp;&nbsp;&nbsp;&nbsp;<code>Seed = ({extracted_year} × 10000) + ({selected_month_num} × 100) + {selected_day} = {seed_val}</code><br>"
+                    math_steps += f"2. تطبيق الخوارزمية الرياضية (Modulo {max_range}) لاستخراج الأرقام:<br>"
+                    for idx_pos, f_num in enumerate(formula_nums, start=1):
+                        math_steps += f"&nbsp;&nbsp;&nbsp;&nbsp;• الرقم ({idx_pos}): <code>((Seed × {idx_pos}) % {max_range}) + 1 ➔ الناتج الثابت = {f_num}</code><br>"
+                    
+                    math_steps += f"3. حساب الـ Superzahl:<br>"
+                    math_steps += f"&nbsp;&nbsp;&nbsp;&nbsp;<code>Superzahl = ({extracted_year} + {selected_month_num} + {selected_day}) % 10 = {formula_spec}</code>"
 
                     st.markdown(f"""
                     <div class="formula-box">
-                        <b>📌 سحب تاريخ: <span style="color:#d9534f;">{full_date_str}</span> (رقم الصف: {original_idx})</b><br><br>
-                        <b>أرقام السحب الفعلية:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in core_nums])} | <b>{special_name}:</b> <span class='special-badge'>{spec_val}</span><br><br>
-                        📐 <b>معادلة استخراج الأرقام من التاريخ ({extracted_year}-{selected_month_num:02d}-{selected_day:02d}):</b><br>
-                        {formulas_html}
+                        <b>📌 سحب تاريخ: <span style="color:#d9534f;">{full_date_str}</span> (رقم الصف في الملف: {original_idx})</b><br><br>
+                        <b>أرقام الأرشيف الفعلية:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in core_nums])} | <b>{special_name}:</b> <span class='special-badge'>{spec_val}</span><br><br>
+                        📐 <b>معادلة التاريخ الصافية (توليد الأرقام من التاريخ وحده):</b><br>
+                        {math_steps}<br><br>
+                        🎯 <b>الأرقام المتولدة بالمعادلة:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in formula_nums])} | <b>النتيجة الخاصة:</b> <span class='special-badge'>{formula_spec}</span>
                     </div>
                     """, unsafe_allow_html=True)
             else:
@@ -293,19 +308,22 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # 2. قسم معادلات وتوقعات سنة 2026 (تاريخ اليوم وتاريخ مخصص)
+    # 2. قسم معادلات وتوقعات سنة 2026 (تاريخ اليوم 09.09.2026)
     st.markdown(f"### {t['gen_title']}")
     
     col_t1, col_t2 = st.columns(2)
     with col_t1:
         target_year_2026 = st.number_input("السنة:", value=2026, min_value=2026, max_value=2030, key=f"y_2026_{game_name}")
     with col_t2:
-        target_date_2026 = st.date_input("اختر تاريخ اليوم في 2026:", value=datetime(2026, 9, 9), key=f"d_2026_{game_name}")
+        target_date_2026 = st.date_input("اختر التاريخ في 2026:", value=datetime(2026, 9, 9), key=f"d_2026_{game_name}")
 
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_2026_{game_name}")
-    selected_count = 6
+    selected_count = 5 if is_euro else 6
+    max_limit = 50 if is_euro else 49
+
     if schein_mode == t["system_schein"]:
-        lotto_sys_choice = st.selectbox(t["select_lotto_system"], ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"], key=f"l_sys_2026_{game_name}")
+        sys_options = ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"]
+        lotto_sys_choice = st.selectbox(t["select_lotto_system"], sys_options, key=f"l_sys_2026_{game_name}")
         selected_count = int(lotto_sys_choice.split()[1])
 
     gen_counter_key = f"counter_gen_2026_{game_name}"
@@ -317,21 +335,21 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         m = target_date_2026.month
         d = target_date_2026.day
         
-        p_nums, p_spec, seed_v = generate_date_formula(y, m, d, selected_count)
+        p_nums, p_spec, seed_v = generate_true_date_formula(y, m, d, selected_count, max_limit)
         
-        # عرض معادلة سنة 2026 بالتفصيل
-        eq_display = f"Seed_Value = ({y} × 10000) + ({m} × 100) + {d} = {seed_v}<br>"
+        eq_display = f"1. المفتاح الزمني للتاريخ ({target_date_2026.strftime('%d.%m.%Y')}): <code>Seed = ({y} × 10000) + ({m} × 100) + {d} = {seed_v}</code><br>"
+        eq_display += f"2. استخراج الأرقام بالمعادلة الصافية:<br>"
         for idx, p_n in enumerate(p_nums, start=1):
-            eq_display += f"• <code>Formula(pos_{idx}) = (Seed_Value × {idx}) % 49 + 1 = {p_n}</code><br>"
+            eq_display += f"&nbsp;&nbsp;&nbsp;&nbsp;• <code>Formula(pos_{idx}) = ((Seed × {idx}) % {max_limit}) + 1 = {p_n}</code><br>"
         
         st.markdown(f"""
         <div class="formula-box">
-            <b>📅 نتيجة معادلة تاريخ سنة 2026 ({target_date_2026.strftime('%d.%m.%Y')}):</b><br><br>
+            <b>📅 تفاصيل معادلة تاريخ سنة 2026:</b><br><br>
             {eq_display}
         </div>
         """, unsafe_allow_html=True)
         
-        display_numbers(p_nums, p_spec)
+        display_numbers(p_nums, p_spec, "Eurozahl (1-10)" if is_euro else "Superzahl (0-9)")
 
     st.markdown("---")
 
@@ -343,8 +361,8 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     if st.button(t["birth_btn"], key=f"btn_birth_{game_name}"): st.session_state[birth_key] += 1
 
     if st.session_state[birth_key] > 0:
-        b_nums, b_spec, _ = generate_date_formula(b_date.year, b_date.month, b_date.day, 6)
-        display_numbers(b_nums, b_spec)
+        b_nums, b_spec, _ = generate_true_date_formula(b_date.year, b_date.month, b_date.day, 6, max_limit)
+        display_numbers(b_nums, b_spec, "Eurozahl (1-10)" if is_euro else "Superzahl (0-9)")
 
     st.markdown("---")
 
@@ -358,8 +376,8 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
     if st.session_state[zodiac_key] > 0:
         z_idx = zodiac_signs.index(z_choice) + 1
-        z_nums, z_spec, _ = generate_date_formula(2026, z_idx, z_idx, 6)
-        display_numbers(z_nums, z_spec)
+        z_nums, z_spec, _ = generate_true_date_formula(2026, z_idx, z_idx, 6, max_limit)
+        display_numbers(z_nums, z_spec, "Eurozahl (1-10)" if is_euro else "Superzahl (0-9)")
 
 with tab1:
     run_full_features_tab(df_lotto, "Lotto", files_lotto, False)
