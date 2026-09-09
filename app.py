@@ -5,8 +5,8 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Fast Ultimate Engine 2026", 
-    page_icon="⚡", 
+    page_title="Lottery Sorted & Cleaned Engine 2026", 
+    page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -29,7 +29,7 @@ st.markdown("""
         box-shadow: 0 8px 16px rgba(0,0,0,0.1); margin-bottom: 20px;
     }
     .formula-box {
-        background-color: #ffffff; border-right: 5px solid #ff7f0e;
+        background-color: #ffffff; border-right: 5px solid #1f77b4;
         padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         margin-bottom: 15px; font-family: monospace;
     }
@@ -59,18 +59,18 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("النسخة السريعة والمحسنة لمعادلات الأرشيف لعام 2026.")
+    st.info("محرك المعادلات المرتب تصاعدياً مع تنقية السوبر زاهل لعام 2026.")
 
 texts = {
     "العربية": {
-        "title": "⚡ المحرك الفائق والمنسق لمعادلات الأرشيف لعام 2026",
+        "title": "🎯 المحرك الرياضي المرتب لمعادلات الأرشيف لعام 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات (اليوم والشهر) وتحليل المعادلات السريع",
+        "search_title": "📅 مطابقة السحوبات وترتيب الأرقام تصاعدياً",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "calc_btn": "⚡ تنفيذ التحليل الفوري واستخراج التقاطع لـ 2026",
+        "calc_btn": "⚡ بدء التحليل، الترتيب التصاعدي وعمل التقاطع لـ 2026",
         "found_res": "✅ السحوبات التاريخية المطابقة:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر بالأرشيف.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
@@ -90,14 +90,14 @@ texts = {
         "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "⚡ Fast Optimized Archive & Intersection Engine 2026",
+        "title": "🎯 Sorted Archive Equation & Clean Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Draws (Day & Month) & Fast Equation Analysis",
+        "search_title": "📅 Match Draws & Sort Numbers Ascending",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "calc_btn": "⚡ Run Fast Analysis & Extract Intersection for 2026",
+        "calc_btn": "⚡ Run Analysis, Sort Ascending & Intersection for 2026",
         "found_res": "✅ Matched Historical Draws:",
         "no_res": "⚠️ No matching draws found.",
         "expander_title": "👁️ View Complete Archive",
@@ -117,14 +117,14 @@ texts = {
         "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "⚡ Schnelle Optimierte Archiv & Intersektions-Engine 2026",
+        "title": "🎯 Sortierte Archiv-Gleichungs & Saubere Engine 2026",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Ziehungen matchen (Tag & Monat) & Schnelle Formelanalyse",
+        "search_title": "📅 Ziehungen matchen & Zahlen aufsteigend sortieren",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "calc_btn": "⚡ Schnelle Analyse ausführen & Intersektion für 2026",
+        "calc_btn": "⚡ Analyse starten, Aufsteigend sortieren & Intersektion 2026",
         "found_res": "✅ Passende historische Ziehungen:",
         "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
@@ -191,7 +191,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive & Fast Engine</h2>
+            <h2>📊 {game_name} Archive & Sorted Engine</h2>
             <h3>Total Historical Draws: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
@@ -244,34 +244,43 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 أولاً: المعادلات التفصيلية المستخرجة لكل سحب تاريخي:")
+                st.markdown("### 🧮 أولاً: المعادلات التفصيلية (مرتبة تصاعدياً من الأصغر للأكبر):")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
                     
+                    # استخراج وتصفية الأرقام الصالحة فقط وترتيبها تصاعدياً
                     filtered_valid = []
                     for val in row_vals:
                         try:
                             vf = float(val)
-                            if 1 <= vf <= max_range and len(filtered_valid) < pick_count:
-                                filtered_valid.append(int(vf))
+                            if 1 <= vf <= max_range:
+                                int_v = int(vf)
+                                if int_v not in filtered_valid:
+                                    filtered_valid.append(int_v)
                         except:
                             pass
-                    core_nums = filtered_valid
+                    
+                    # ترتيب الأرقام تصاعدياً من الأصغر للأكبر
+                    filtered_valid.sort()
+                    core_nums = filtered_valid[:pick_count]
                     
                     if len(core_nums) < pick_count:
                         while len(core_nums) < pick_count:
                             fallback_n = ((len(core_nums) + 1) * selected_day) % max_range + 1
                             if fallback_n not in core_nums: core_nums.append(fallback_n)
+                        core_nums.sort()
 
-                    spec_val = 0
-                    if len(row_vals) > 9 and pd.notna(row_vals[9]):
+                    # استخراج Superzahl نظيف وصحيح (بين 0 و 9 أو حسب الحدود)
+                    spec_val = 3 # قيمة افتراضية نظيفة
+                    for val in row_vals:
                         try:
-                            spec_val = int(float(row_vals[9]))
+                            vf = float(val)
+                            if 0 <= vf < special_limit and int(vf) != core_nums[0]: # نتأكد أنه ليس رقماً أساسياً
+                                spec_val = int(vf)
+                                break
                         except:
-                            spec_val = 5
-                    else:
-                        spec_val = 4
+                            pass
 
                     all_historical_extracted_sets.append(set(core_nums))
                     all_historical_specials.append(spec_val)
@@ -279,7 +288,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
                         factor = (num_val * 7 + selected_day * pos_idx) % max_range + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {factor}</code><br>"
+                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم الصغير {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {factor}</code><br>"
 
                     spec_factor = (spec_val * 3 + selected_day) % special_limit + 1
                     formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_factor}</code>"
@@ -287,7 +296,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     st.markdown(f"""
                     <div class="formula-box">
                         <b>السحب التاريخي رقم ({original_idx + 1}):</b><br>
-                        📌 <b>الأرقام الفعلية:</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
+                        📌 <b>الأرقام الفعلية (مرتبة تصاعدياً):</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
                         <br>📐 <b>المعادلات التفصيلية:</b><br>
                         {formulas_html}
                     </div>
@@ -301,7 +310,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     all_historical_specials.append(i % special_limit)
 
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
-            st.markdown(f"### 🎯 ثانياً: نتائج التقاطع النهائي لجميع المعادلات والسحوبات التاريخية لعام 2026")
+            st.markdown(f"### 🎯 ثانياً: نتائج التقاطع النهائي وتوقع السوبر زاهل لعام 2026")
             
             if all_historical_extracted_sets:
                 intersection_set = set.intersection(*all_historical_extracted_sets)
@@ -316,6 +325,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             else:
                 final_intersect_nums = [3, 15, 27, 34, 41, 48][:pick_count]
 
+            # ترتيب الأرقام النهائية تصاعدياً بشكل حتمي
+            final_intersect_nums.sort()
+
             if all_historical_specials:
                 from collections import Counter
                 spec_counts = Counter(all_historical_specials)
@@ -328,7 +340,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             else:
                 final_special_nums = most_common_spec
 
-            st.markdown(f"**الرؤية الرياضية المتقاطعة والنهائية لعام 2026 (بناءً على تاريخ {selected_day}/{selected_month_num}):**")
+            st.markdown(f"**الرؤية الرياضية المتقاطعة والنهائية لعام 2026 (مرتبة تصاعدياً بناءً على تاريخ {selected_day}/{selected_month_num}):**")
             display_numbers(final_intersect_nums, final_special_nums, special_name)
             st.markdown("</div>", unsafe_allow_html=True)
 
