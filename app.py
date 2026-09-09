@@ -73,8 +73,8 @@ texts = {
         "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
         "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
         "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
-        "gen_title": "📅 قسم التوقعات والمعادلة الزمنية لسنة 2026",
-        "gen_btn": "🚀 توليد الأرقام بناءً على تاريخ اليوم",
+        "gen_title": "📅 قسم التوقعات والأربع احتمالات لسنة 2026",
+        "gen_btn": "🚀 توليد 4 احتمالات للأرقام",
         "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
         "birth_select": "حدد تاريخ ميلادك:",
         "birth_btn": "🎲 توليد أرقام (تاريخ الميلاد)",
@@ -98,8 +98,8 @@ texts = {
         "normal_schein": "Normal Schein (6 numbers)",
         "system_schein": "System Schein (Extended & Combinations)",
         "select_lotto_system": "Select Lotto System Count (Vollsystem):",
-        "gen_title": "📅 2026 Date-Seed Prediction Center",
-        "gen_btn": "🚀 Generate Numbers for Today's Date",
+        "gen_title": "📅 2026 Date-Seed 4 Possibilities Center",
+        "gen_btn": "🚀 Generate 4 Possibilities",
         "birth_title": "📅 Independent Birthdate Window",
         "birth_select": "Select your birthdate:",
         "birth_btn": "🎲 Generate Numbers (Birthdate)",
@@ -123,8 +123,8 @@ texts = {
         "normal_schein": "Normaler Schein (6 Zahlen)",
         "system_schein": "Systemschein",
         "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
-        "gen_title": "📅 2026 Prognose-Center",
-        "gen_btn": "🚀 Zahlen für das Datum generieren",
+        "gen_title": "📅 2026 Prognose-Center (4 Möglichkeiten)",
+        "gen_btn": "🚀 4 Möglichkeiten generieren",
         "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
         "birth_select": "Geburtsdatum wählen:",
         "birth_btn": "🎲 Zahlen generieren (Geburtsdatum)",
@@ -172,7 +172,6 @@ def display_numbers(numbers, special_num, special_label="Superzahl (0-9)"):
     st.markdown(f"<br>**{special_label}:** {spec_html}", unsafe_allow_html=True)
 
 def generate_date_seed_numbers(year, month, day, count=6, max_val=49):
-    """توليد الأرقام البرمجية بناءً على مفتاح التاريخ (Seed)"""
     seed_val = (year * 10000) + (month * 100) + day
     np.random.seed(seed_val % (2**31 - 1))
     nums = sorted(np.random.choice(range(1, max_val + 1), count, replace=False).tolist())
@@ -283,7 +282,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # 2. قسم توقعات سنة 2026
+    # 2. قسم توقعات سنة 2026 (توليد 4 احتمالات)
     st.markdown(f"### {t['gen_title']}")
     
     col_t1, col_t2 = st.columns(2)
@@ -310,16 +309,33 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         m = target_date_2026.month
         d = target_date_2026.day
         
-        p_nums, p_spec, seed_v = generate_date_seed_numbers(y, m, d, selected_count, max_limit)
+        base_seed_val = (y * 10000) + (m * 100) + d
         
         st.markdown(f"""
         <div class="formula-box">
             <b>📅 تفاصيل المفتاح الزمني لتاريخ {target_date_2026.strftime('%d.%m.%Y')}:</b><br>
-            • مفتاح البذرة (Seed) = <code>{seed_v}</code>
+            • مفتاح البذرة الأساسي (Seed) = <code>{base_seed_val}</code>
         </div>
         """, unsafe_allow_html=True)
         
-        display_numbers(p_nums, p_spec, "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)")
+        # توليد 4 احتمالات مختلفة بتغيير بسيط في Seed لكل احتمال
+        st.markdown("### 🎲 الاحتمالات الأربعة المقترحة:")
+        for i in range(1, 5):
+            current_seed = base_seed_val + (i * 111) # تغيير طفيف لتوليد تنوع في الاحتمالات الأربعة
+            np.random.seed(current_seed % (2**31 - 1))
+            p_nums = sorted(np.random.choice(range(1, max_limit + 1), selected_count, replace=False).tolist())
+            p_spec = (base_seed_val + i) % (12 if is_euro else 10)
+            
+            nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in p_nums])
+            spec_html = f"<span class='special-badge'>{p_spec}</span>"
+            spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+            
+            st.markdown(f"""
+            <div style="background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:10px;">
+                <b>الاحتمال رقم ({i}):</b><br>
+                {nums_html} | <b>{spec_label}:</b> {spec_html}
+            </div>
+            """, unsafe_allow_html=True)
 
     st.markdown("---")
 
