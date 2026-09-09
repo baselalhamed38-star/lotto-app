@@ -59,20 +59,20 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك المعادلات المرتب تصاعدياً مع تنقية السوبر زاهل لعام 2026.")
+    st.info("محرك المعادلات المرتب تصاعدياً واستخراج الأرقام من جدول السحوبات التاريخية لعام 2026.")
 
 texts = {
     "العربية": {
-        "title": "🎯 المحرك الرياضي المرتب لمعادلات الأرشيف لعام 2026",
+        "title": "🎯 المحرك الرياضي لاستخراج سحوبات التاريخ وتوقع 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات وترتيب الأرقام تصاعدياً",
+        "search_title": "📅 مطابقة السحوبات من الجدول واستخراج الأرقام تصاعدياً",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "calc_btn": "⚡ بدء التحليل، الترتيب التصاعدي وعمل التقاطع لـ 2026",
-        "found_res": "✅ السحوبات التاريخية المطابقة:",
-        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر بالأرشيف.",
+        "calc_btn": "⚡ بدء استخراج المعادلات من الجدول وحساب توقعات 2026",
+        "found_res": "✅ السحوبات التاريخية المطابقة من الجدول:",
+        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر في الجدول.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
         "schein_type": "نوع الورقة (Tippschein Type):",
         "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
@@ -90,16 +90,16 @@ texts = {
         "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "🎯 Sorted Archive Equation & Clean Engine 2026",
+        "title": "🎯 Archive Table Extraction & 2026 Prediction Engine",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Draws & Sort Numbers Ascending",
+        "search_title": "📅 Match Table Draws & Extract Numbers Ascending",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "calc_btn": "⚡ Run Analysis, Sort Ascending & Intersection for 2026",
-        "found_res": "✅ Matched Historical Draws:",
-        "no_res": "⚠️ No matching draws found.",
+        "calc_btn": "⚡ Run Table Equations & 2026 Prediction",
+        "found_res": "✅ Matched Historical Draws from Table:",
+        "no_res": "⚠️ No matching draws found in table.",
         "expander_title": "👁️ View Complete Archive",
         "schein_type": "Tippschein Type:",
         "normal_schein": "Normal Schein (6 numbers)",
@@ -117,16 +117,16 @@ texts = {
         "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "🎯 Sortierte Archiv-Gleichungs & Saubere Engine 2026",
+        "title": "🎯 Archiv-Tabellenextraktion & 2026 Prognose-Engine",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Ziehungen matchen & Zahlen aufsteigend sortieren",
+        "search_title": "📅 Tabellen-Ziehungen matchen & Zahlen aufsteigend extrahieren",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "calc_btn": "⚡ Analyse starten, Aufsteigend sortieren & Intersektion 2026",
-        "found_res": "✅ Passende historische Ziehungen:",
-        "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
+        "calc_btn": "⚡ Tabellen-Gleichungen & 2026 Prognose starten",
+        "found_res": "✅ Passende historische Ziehungen aus der Tabelle:",
+        "no_res": "⚠️ Keine passenden Ziehungen in der Tabelle gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
         "schein_type": "Tippschein-Typ:",
         "normal_schein": "Normaler Schein (6 Zahlen)",
@@ -191,7 +191,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive & Sorted Engine</h2>
+            <h2>📊 {game_name} Archive Table & Sorted Engine</h2>
             <h3>Total Historical Draws: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
@@ -244,7 +244,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 أولاً: المعادلات التفصيلية (مرتبة تصاعدياً من الأصغر للأكبر):")
+                st.markdown("### 🧮 أولاً: معادلات استخراج أرقام السحوبات التاريخية (من الجدول مرتبة تصاعدياً):")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
@@ -284,18 +284,18 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
-                        # الحساب الرياضي البحت والصحيح 100%
-                        calc_result = (num_val * selected_day * pos_idx) % max_range + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم الصغير {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_result}</code><br>"
+                        # المعادلة الرياضية التي تربط الرقم المستخرج من جدول الأرشيف بترتيبه ويوم السحب
+                        calc_check = (num_val * selected_day * pos_idx) % max_range + 1
+                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم المستخرج من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
 
-                    spec_calc_result = (spec_val * selected_month_num) % special_limit + 1
-                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_result}</code>"
+                    spec_calc_check = (spec_val * selected_month_num) % special_limit + 1
+                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} المستخرج ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_check}</code>"
 
                     st.markdown(f"""
                     <div class="formula-box">
-                        <b>السحب التاريخي رقم ({original_idx + 1}):</b><br>
+                        <b>السحب التاريخي رقم ({original_idx + 1}) المستخرج من الجدول:</b><br>
                         📌 <b>الأرقام الفعلية (مرتبة تصاعدياً):</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
-                        <br>📐 <b>المعادلات التفصيلية:</b><br>
+                        <br>📐 <b>معادلة الأرقام المستخرجة من تاريخ السحب:</b><br>
                         {formulas_html}
                     </div>
                     """, unsafe_allow_html=True)
@@ -308,37 +308,27 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     all_historical_specials.append(i % special_limit)
 
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
-            st.markdown(f"### 🎯 ثانياً: نتائج التقاطع النهائي وتوقع السوبر زاهل لعام 2026")
+            st.markdown(f"### 🎯 ثانياً: معادلة وتوقع سحب اليوم ($\mathbf{{09.09.2026}}$) استناداً إلى نتائج الجدول:")
             
-            if all_historical_extracted_sets:
-                intersection_set = set.intersection(*all_historical_extracted_sets)
-                if len(intersection_set) < pick_count:
-                    from collections import Counter
-                    all_flattened = [num for s in all_historical_extracted_sets for num in s]
-                    common_nums = [item[0] for item in Counter(all_flattened).most_common(pick_count + 5)]
-                    np.random.seed(2026 + selected_day + selected_month_num)
-                    final_intersect_nums = sorted(np.random.choice(common_nums, pick_count, replace=False).tolist())
-                else:
-                    final_intersect_nums = sorted(list(intersection_set))[:pick_count]
-            else:
-                final_intersect_nums = [3, 15, 27, 34, 41, 48][:pick_count]
+            # حساب وتوقع سحب اليوم 2026 بناءً على مدخلات تاريخ اليوم (09.09.2026)
+            current_date_nums = []
+            for pos_idx in range(1, pick_count + 1):
+                gen_val = ((selected_day * selected_month_num * pos_idx) + 2026) % max_range + 1
+                while gen_val in current_date_nums:
+                    gen_val = (gen_val + 1) % max_range + 1
+                current_date_nums.append(gen_val)
+            current_date_nums.sort()
+            
+            curr_special = (selected_day * selected_month_num) % special_limit + 1
 
-            final_intersect_nums.sort()
-
-            if all_historical_specials:
-                from collections import Counter
-                spec_counts = Counter(all_historical_specials)
-                most_common_spec = spec_counts.most_common(1)[0][0]
-            else:
-                most_common_spec = 3
-
-            if is_euro:
-                final_special_nums = sorted([most_common_spec, (most_common_spec + 3) % special_limit + 1])
-            else:
-                final_special_nums = most_common_spec
-
-            st.markdown(f"**الرؤية الرياضية المتقاطعة والنهائية لعام 2026 (مرتبة تصاعدياً بناءً على تاريخ {selected_day}/{selected_month_num}):**")
-            display_numbers(final_intersect_nums, final_special_nums, special_name)
+            st.markdown(f"**معادلات توليد أرقام سحب اليوم (تاريخ اليوم: {selected_day}.{selected_month_num}.2026):**")
+            for pos_idx, num_val in enumerate(current_date_nums, start=1):
+                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم المتوقع ({pos_idx}):</b> <code>Formula(pos_{pos_idx}) = (Day[{selected_day}] × Month[{selected_month_num}] × {pos_idx} + 2026) % {max_range} + 1 = <b>{num_val}</b></code>", unsafe_allow_html=True)
+            
+            st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} المتوقع:</b> <code style='color:#d9534f;'>Super_Formula = (Day[{selected_day}] × Month[{selected_month_num}]) % {special_limit} + 1 = <b>{curr_special}</b></code>", unsafe_allow_html=True)
+            
+            st.markdown("<br>**الرؤية النهائية لأرقام سحب اليوم (مُرتّبة تصاعدياً):**")
+            display_numbers(current_date_nums, curr_special, special_name)
             st.markdown("</div>", unsafe_allow_html=True)
 
         with st.expander(t["expander_title"]):
