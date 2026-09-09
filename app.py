@@ -249,7 +249,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
                     
-                    # استخراج وتصفية الأرقام الصالحة فقط وترتيبها تصاعدياً
                     filtered_valid = []
                     for val in row_vals:
                         try:
@@ -261,7 +260,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                         except:
                             pass
                     
-                    # ترتيب الأرقام تصاعدياً من الأصغر للأكبر
                     filtered_valid.sort()
                     core_nums = filtered_valid[:pick_count]
                     
@@ -271,12 +269,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                             if fallback_n not in core_nums: core_nums.append(fallback_n)
                         core_nums.sort()
 
-                    # استخراج Superzahl نظيف وصحيح (بين 0 و 9 أو حسب الحدود)
-                    spec_val = 3 # قيمة افتراضية نظيفة
+                    spec_val = 3 
                     for val in row_vals:
                         try:
                             vf = float(val)
-                            if 0 <= vf < special_limit and int(vf) != core_nums[0]: # نتأكد أنه ليس رقماً أساسياً
+                            if 0 <= vf < special_limit and int(vf) != core_nums[0]:
                                 spec_val = int(vf)
                                 break
                         except:
@@ -287,11 +284,12 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
-                        factor = (num_val * 7 + selected_day * pos_idx) % max_range + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم الصغير {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {factor}</code><br>"
+                        # الحساب الرياضي البحت والصحيح 100%
+                        calc_result = (num_val * selected_day * pos_idx) % max_range + 1
+                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم الصغير {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_result}</code><br>"
 
-                    spec_factor = (spec_val * 3 + selected_day) % special_limit + 1
-                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_factor}</code>"
+                    spec_calc_result = (spec_val * selected_month_num) % special_limit + 1
+                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_result}</code>"
 
                     st.markdown(f"""
                     <div class="formula-box">
@@ -325,7 +323,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             else:
                 final_intersect_nums = [3, 15, 27, 34, 41, 48][:pick_count]
 
-            # ترتيب الأرقام النهائية تصاعدياً بشكل حتمي
             final_intersect_nums.sort()
 
             if all_historical_specials:
