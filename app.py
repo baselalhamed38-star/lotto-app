@@ -59,7 +59,7 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك المعادلات المرتب تصاعدياً واستخراج الأرقام من جدول السحوبات التاريخية لعام 2026.")
+    st.info("محرك المطابقة الدقيقة لأرقام السحوبات التاريخية وتوقع 2026.")
 
 texts = {
     "العربية": {
@@ -244,7 +244,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 أولاً: معادلات استخراج أرقام السحوبات التاريخية (من الجدول مرتبة تصاعدياً):")
+                st.markdown("### 🧮 أولاً: معادلات استخراج أرقام السحوبات التاريخية (مطابقة لرقم السحب في الجدول تماماً):")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
@@ -284,16 +284,18 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
-                        # المعادلة الرياضية التي تربط الرقم المستخرج من جدول الأرشيف بترتيبه ويوم السحب
                         calc_check = (num_val * selected_day * pos_idx) % max_range + 1
                         formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم المستخرج من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
 
                     spec_calc_check = (spec_val * selected_month_num) % special_limit + 1
                     formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} المستخرج ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_check}</code>"
 
+                    # مطابقة رقم السحب تماماً لما يظهر في الجدول (رقم الصف الأصلي دون أي إزاحة)
+                    draw_display_num = original_idx
+
                     st.markdown(f"""
                     <div class="formula-box">
-                        <b>السحب التاريخي رقم ({original_idx + 1}) المستخرج من الجدول:</b><br>
+                        <b>السحب التاريخي رقم ({draw_display_num}) المطابق للجدول:</b><br>
                         📌 <b>الأرقام الفعلية (مرتبة تصاعدياً):</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
                         <br>📐 <b>معادلة الأرقام المستخرجة من تاريخ السحب:</b><br>
                         {formulas_html}
@@ -310,7 +312,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
             st.markdown(f"### 🎯 ثانياً: معادلة وتوقع سحب اليوم ($\mathbf{{09.09.2026}}$) استناداً إلى نتائج الجدول:")
             
-            # حساب وتوقع سحب اليوم 2026 بناءً على مدخلات تاريخ اليوم (09.09.2026)
             current_date_nums = []
             for pos_idx in range(1, pick_count + 1):
                 gen_val = ((selected_day * selected_month_num * pos_idx) + 2026) % max_range + 1
