@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Sorted & Cleaned Engine 2026", 
+    page_title="Lottery Exact Engine 2026", 
     page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -122,7 +122,6 @@ texts = {
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
         "search_title": "📅 Tabellen-Ziehungen matchen & Zahlen exakt extrahieren",
-        "tag": "Tag wählen:",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
         "calc_btn": "⚡ Tabellen-Gleichungen & 2026 Prognose starten",
@@ -193,7 +192,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.markdown(f"""
         <div class="metric-card">
             <h2>📊 {game_name} Archive Table & Sorted Engine</h2>
-            <h3>Total Historical Draws: {total_rows}</h3>
+            <h3>Total Historical Rows: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
     
@@ -232,55 +231,57 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
         if st.button(t["calc_btn"], key=f"btn_formula_{game_name}"):
             st.markdown("---")
-            max_range = 50 if is_euro else 49
-            special_limit = 10 if not is_euro else 12
-            special_name = "Euro Zahlen (Stars)" if is_euro else "Superzahl"
-            pick_count = 6 if not is_euro else 5
+            max_range = 49
+            special_name = "Superzahl (0-9)"
 
             if matched_rows:
                 res_df = pd.DataFrame([r[1] for r in matched_rows])
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 أولاً: استخراج الأرقام الفعلية من أعمدة الجدول تماماً بالترتيب:")
+                st.markdown("### 🧮 استخراج الأرقام بدقة مطابقة لأعمدة الجدول الفعلية:")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
                     
-                    # استخراج الأرقام من أعمدة السحب الثابتة (تجاوز الفهرس وتاريخ السحب عبر بدء الاستخراج من العمود 2 أو 3 حسب تخطيط الجدول)
-                    extracted_raw = []
-                    for val in row_vals[2:]: # تخطي الأعمدة الأولى المخصصة للفهرس أو التواريخ
+                    # استخراج الأرقام الستة الأساسية بدقة من الأعمدة المخصصة (افتراض الأطياف D إلى I تعادل الإندكس 3 إلى 8 في بايثون)
+                    core_nums = []
+                    for col_idx in range(3, min(9, len(row_vals))):
                         try:
-                            vf = float(val)
+                            vf = float(row_vals[col_idx])
                             if 1 <= vf <= max_range:
-                                extracted_raw.append(int(vf))
+                                core_nums.append(int(vf))
                         except:
                             pass
                     
-                    # أخذ الأرقام الأساسية للسحب بالترتيب الظاهر في الجدول (أول 6 أرقام)
-                    core_nums = extracted_raw[:pick_count]
-                    if len(core_nums) < pick_count:
-                        while len(core_nums) < pick_count:
+                    if len(core_nums) < 6:
+                        while len(core_nums) < 6:
                             fallback_n = ((len(core_nums) + 1) * selected_day) % max_range + 1
                             if fallback_n not in core_nums: core_nums.append(fallback_n)
+                    core_nums = core_nums[:6]
 
-                    # أخذ الرقم الإضافي (Superzahl) إذا وجد، وإلا افتراضي
-                    spec_val = extracted_raw[pick_count] if len(extracted_raw) > pick_count else 3
+                    # استخراج السوبر زاهل بدقة من العمود المخصص (العمود K يعادل الإندكس 10 في بايثون)
+                    spec_val = 0
+                    if len(row_vals) > 10:
+                        try:
+                            spec_val = int(float(row_vals[10]))
+                            if not (0 <= spec_val <= 9):
+                                spec_val = spec_val % 10
+                        except:
+                            spec_val = 0
 
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
                         calc_check = (num_val * selected_day * pos_idx) % max_range + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم الفعلي من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
+                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
 
-                    spec_calc_check = (spec_val * selected_month_num) % special_limit + 1
-                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} الفعلي ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_check}</code>"
-
-                    draw_display_num = original_idx
+                    spec_calc_check = (spec_val * selected_month_num) % 10
+                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>Superzahl الفعلي ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % 10 = {spec_calc_check}</code>"
 
                     st.markdown(f"""
                     <div class="formula-box">
-                        <b>السحب التاريخي رقم ({draw_display_num}) المطابق للجدول:</b><br>
-                        📌 <b>الأرقام الفعلية من الجدول (حسب تسلسلها الأصلي):</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
+                        <b>السحب التاريخي رقم ({original_idx}) المطابق للجدول:</b><br>
+                        📌 <b>الأرقام الفعلية من أعمدة الجدول:</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
                         <br>📐 <b>معادلة الأرقام المستخرجة:</b><br>
                         {formulas_html}
                     </div>
@@ -289,23 +290,23 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 st.warning(t["no_res"])
 
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
-            st.markdown(f"### 🎯 ثانياً: معادلة وتوقع سحب اليوم ($\mathbf{{09.09.2026}}$) استناداً إلى نتائج الجدول:")
+            st.markdown(f"### 🎯 ثانياً: معادلة وتوقع سحب اليوم ($\mathbf{{09.09.2026}}$) استناداً إلى تحليل الجدول:")
             
             current_date_nums = []
-            for pos_idx in range(1, pick_count + 1):
+            for pos_idx in range(1, 7):
                 gen_val = ((selected_day * selected_month_num * pos_idx) + 2026) % max_range + 1
                 while gen_val in current_date_nums:
                     gen_val = (gen_val + 1) % max_range + 1
                 current_date_nums.append(gen_val)
             current_date_nums.sort()
             
-            curr_special = (selected_day * selected_month_num) % special_limit + 1
+            curr_special = (selected_day * selected_month_num) % 10
 
             st.markdown(f"**معادلات توليد أرقام سحب اليوم (تاريخ اليوم: {selected_day}.{selected_month_num}.2026):**")
             for pos_idx, num_val in enumerate(current_date_nums, start=1):
                 st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم المتوقع ({pos_idx}):</b> <code>Formula(pos_{pos_idx}) = (Day[{selected_day}] × Month[{selected_month_num}] × {pos_idx} + 2026) % {max_range} + 1 = <b>{num_val}</b></code>", unsafe_allow_html=True)
             
-            st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} المتوقع:</b> <code style='color:#d9534f;'>Super_Formula = (Day[{selected_day}] × Month[{selected_month_num}]) % {special_limit} + 1 = <b>{curr_special}</b></code>", unsafe_allow_html=True)
+            st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>Superzahl المتوقع (من 0 إلى 9):</b> <code style='color:#d9534f;'>Super_Formula = (Day[{selected_day}] × Month[{selected_month_num}]) % 10 = <b>{curr_special}</b></code>", unsafe_allow_html=True)
             
             st.markdown("<br>**الرؤية النهائية لأرقام سحب اليوم (مُرتّبة تصاعدياً):**")
             display_numbers(current_date_nums, curr_special, special_name)
@@ -318,15 +319,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     
     st.markdown(f"### {t['gen_title']}")
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
-    selected_count, euro_count = 6, 2
+    selected_count = 6
     
     if schein_mode == t["system_schein"]:
-        if not is_euro:
-            lotto_sys_choice = st.selectbox(t["select_lotto_system"], ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"], key=f"l_sys_{game_name}")
-            selected_count = int(lotto_sys_choice.split()[1])
-        else:
-            euro_sys_choice = st.selectbox(t["select_euro_system"], ["System 5/3 (5 أرقام + 3 نجوم)", "System 5/4 (5 أرقام + 4 نجوم)", "System 6/2 (6 أرقام + 2 نجوم)"], key=f"e_sys_{game_name}")
-            selected_count = 5 if "5/" in euro_sys_choice else (6 if "6/" in euro_sys_choice else 7)
+        lotto_sys_choice = st.selectbox(t["select_lotto_system"], ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"], key=f"l_sys_{game_name}")
+        selected_count = int(lotto_sys_choice.split()[1])
 
     gen_counter_key = f"counter_gen_{game_name}"
     if gen_counter_key not in st.session_state: st.session_state[gen_counter_key] = 0
@@ -334,42 +331,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     
     if st.session_state[gen_counter_key] > 0:
         np.random.seed(abs(total_rows + st.session_state[gen_counter_key] * 555) % (2**31 - 1))
-        p_nums = sorted(np.random.choice(range(1, 50 if not is_euro else 51), selected_count, replace=False).tolist())
-        p_spec = int(np.random.randint(0, 10)) if not is_euro else sorted(np.random.choice(range(1, 13), euro_count, replace=False).tolist())
-        display_numbers(p_nums, p_spec, "Superzahl" if not is_euro else "Euro Zahlen")
-
-    st.markdown("---")
-    
-    st.markdown(f"### {t['birth_title']}")
-    birth_date = st.date_input(t["birth_select"], value=datetime(1990, 1, 1), key=f"birth_{game_name}")
-    birth_counter_key = f"counter_birth_{game_name}"
-    if birth_counter_key not in st.session_state: st.session_state[birth_counter_key] = 0
-    if st.button(t["birth_btn"], key=f"btn_birth_{game_name}"): st.session_state[birth_counter_key] += 1
-    
-    if st.session_state[birth_counter_key] > 0:
-        b_seed = (birth_date.year * 10000 + birth_date.month * 100 + birth_date.day + 2026) % (2**31 - 1)
-        np.random.seed(b_seed)
-        b_nums = sorted(np.random.choice(range(1, 50 if not is_euro else 51), 6 if not is_euro else 5, replace=False).tolist())
-        b_spec = int(np.random.randint(0, 10)) if not is_euro else sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-        st.markdown(f"**{t['power_label']} 92%**")
-        display_numbers(b_nums, b_spec, "Superzahl" if not is_euro else "Euro Zahlen")
-
-    st.markdown("---")
-    
-    st.markdown(f"### {t['zodiac_title']}")
-    zodiac_signs = ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"]
-    selected_zodiac = st.selectbox(t["zodiac_select"], zodiac_signs, key=f"zodiac_{game_name}")
-    zodiac_counter_key = f"counter_zodiac_{game_name}"
-    if zodiac_counter_key not in st.session_state: st.session_state[zodiac_counter_key] = 0
-    if st.button(t["zodiac_btn"], key=f"btn_zodiac_{game_name}"): st.session_state[zodiac_counter_key] += 1
-    
-    if st.session_state[zodiac_counter_key] > 0:
-        z_seed = (sum(ord(c) for c in selected_zodiac) + 2026) % (2**31 - 1)
-        np.random.seed(z_seed)
-        z_nums = sorted(np.random.choice(range(1, 50 if not is_euro else 51), 6 if not is_euro else 5, replace=False).tolist())
-        z_spec = int(np.random.randint(0, 10)) if not is_euro else sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
-        st.markdown(f"**{t['power_label']} 94%**")
-        display_numbers(z_nums, z_spec, "Superzahl" if not is_euro else "Euro Zahlen")
+        p_nums = sorted(np.random.choice(range(1, 50), selected_count, replace=False).tolist())
+        p_spec = int(np.random.randint(0, 10))
+        display_numbers(p_nums, p_spec, "Superzahl (0-9)")
 
 with tab1:
     run_full_features_tab(df_lotto, "Lotto", files_lotto, False)
