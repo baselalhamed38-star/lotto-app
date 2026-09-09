@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Exact Historical Engine", 
+    page_title="Lottery Complete Engine 2026", 
     page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -54,11 +54,11 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك استخراج سحوبات التاريخ المطابقة لنفس اليوم والشهر.")
+    st.info("محرك السحوبات التاريخية الشامل مع توليد الأبراج وتاريخ الميلاد وأنظمة السيستم.")
 
 texts = {
     "العربية": {
-        "title": "🎯 محرك استخراج السحوبات التاريخية حسب اليوم والشهر",
+        "title": "🎯 المحرك الشامل للسحوبات التاريخية وتوليد الأرقام 2026",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
@@ -69,9 +69,21 @@ texts = {
         "found_res": "✅ السحوبات التاريخية المطابقة في الأرشيف:",
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر في الجدول.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
+        "schein_type": "نوع الورقة (Tippschein Type):",
+        "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
+        "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
+        "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
+        "gen_title": "🎲 مركز توليد التوقعات الذكية",
+        "gen_btn": "🚀 توليد أرقام 2026 والتحليل الاعتيادي",
+        "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
+        "birth_select": "حدد تاريخ ميلادك:",
+        "birth_btn": "🎲 توليد أرقام 2026 (تاريخ الميلاد)",
+        "zodiac_title": "🌟 نافذة الأبراج الفلكية المستقلة",
+        "zodiac_select": "اختر برجك الفلكي:",
+        "zodiac_btn": "🎲 توليد أرقام 2026 (البرج الفلكي)",
     },
     "English": {
-        "title": "🎯 Historical Draws Extraction Engine by Day & Month",
+        "title": "🎯 Comprehensive Historical Draws & 2026 Engine",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
@@ -82,9 +94,21 @@ texts = {
         "found_res": "✅ Matched Historical Draws in Archive:",
         "no_res": "⚠️ No matching draws found for this day and month in the table.",
         "expander_title": "👁️ View Complete Archive",
+        "schein_type": "Tippschein Type:",
+        "normal_schein": "Normal Schein (6 numbers)",
+        "system_schein": "System Schein (Extended & Combinations)",
+        "select_lotto_system": "Select Lotto System Count (Vollsystem):",
+        "gen_title": "🎲 Smart Prediction Center",
+        "gen_btn": "🚀 Generate Numbers & Standard Analysis",
+        "birth_title": "📅 Independent Birthdate Window",
+        "birth_select": "Select your birthdate:",
+        "birth_btn": "🎲 Generate 2026 Numbers (Birthdate)",
+        "zodiac_title": "🌟 Independent Zodiac Window",
+        "zodiac_select": "Select your Zodiac Sign:",
+        "zodiac_btn": "🎲 Generate 2026 Numbers (Zodiac)",
     },
     "Deutsch": {
-        "title": "🎯 Historische Ziehungs-Extraktions-Engine nach Tag & Monat",
+        "title": "🎯 Umfassende historische Ziehungen & 2026 Engine",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
@@ -95,6 +119,18 @@ texts = {
         "found_res": "✅ Passende historische Ziehungen im Archiv:",
         "no_res": "⚠️ Keine passenden Ziehungen für diesen Tag und Monat gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
+        "schein_type": "Tippschein-Typ:",
+        "normal_schein": "Normaler Schein (6 Zahlen)",
+        "system_schein": "Systemschein (Erweiterte Kombinationen)",
+        "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
+        "gen_title": "🎲 Intelligentes Prognose-Center",
+        "gen_btn": "🚀 Zahlen & Standard-Analyse generieren",
+        "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
+        "birth_select": "Geburtsdatum wählen:",
+        "birth_btn": "🎲 2026 Zahlen generieren (Geburtsdatum)",
+        "zodiac_title": "🌟 Unabhängiges Sternzeichen-Fenster",
+        "zodiac_select": "Sternzeichen wählen:",
+        "zodiac_btn": "🎲 2026 Zahlen generieren (Sternzeichen)",
     }
 }
 
@@ -132,10 +168,10 @@ tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 def display_numbers(numbers, special_num, special_label="Superzahl"):
     nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in numbers])
     spec_html = f"<span class='special-badge'>{special_num}</span>"
-    st.markdown(f"**أرقام السحب الأساسية:** {nums_html}", unsafe_allow_html=True)
-    st.markdown(f"**{special_label}:** {spec_html}", unsafe_allow_html=True)
+    st.markdown(f"**أرقام السحب الأساسية ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
+    st.markdown(f"<br>**{special_label}:** {spec_html}", unsafe_allow_html=True)
 
-def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
+def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'General Files'}`")
     if df.empty:
         st.error(f"⚠️ No files found for {game_name}.")
@@ -144,11 +180,12 @@ def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Historical Archive</h2>
+            <h2>📊 {game_name} Historical Archive & Prediction Engine</h2>
             <h3>Total Records: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
     
+    # 1. قسم استخراج السحوبات التاريخية المطابقة لنفس اليوم والشهر
     with st.container():
         st.markdown(f"### {t['search_title']}")
         col_d, col_m = st.columns(2)
@@ -193,7 +230,6 @@ def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
                 for original_idx, r in matched_rows:
                     row_vals = list(r.values)
                     
-                    # استخراج التاريخ إن وجد في الصف (لبحثه وعرضه بدقة)
                     full_date_str = "غير محدد"
                     for val in row_vals[:3]:
                         dt = pd.to_datetime(val, errors='coerce')
@@ -204,7 +240,6 @@ def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
                             full_date_str = str(val)
                             break
 
-                    # استخراج الأرقام الأساسية بدقة من الأعمدة D إلى I (الإندكس 3 إلى 8 في بايثون)
                     core_nums = []
                     for col_idx in range(3, min(9, len(row_vals))):
                         try:
@@ -215,7 +250,6 @@ def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
                             pass
                     core_nums = core_nums[:6]
 
-                    # استخراج الـ Superzahl بدقة من العمود K (الإندكس 10)
                     spec_val = 0
                     if len(row_vals) > 10:
                         try:
@@ -237,9 +271,63 @@ def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
 
         with st.expander(t["expander_title"]):
             st.dataframe(df, use_container_width=True)
+            
+    st.markdown("---")
+    
+    # 2. مركز توليد التوقعات الذكية ونظام السيستم شاين
+    st.markdown(f"### {t['gen_title']}")
+    schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
+    selected_count = 6
+    
+    if schein_mode == t["system_schein"]:
+        lotto_sys_choice = st.selectbox(t["select_lotto_system"], ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"], key=f"l_sys_{game_name}")
+        selected_count = int(lotto_sys_choice.split()[1])
+
+    gen_counter_key = f"counter_gen_{game_name}"
+    if gen_counter_key not in st.session_state: st.session_state[gen_counter_key] = 0
+    if st.button(t["gen_btn"], key=f"btn_gen_{game_name}"): st.session_state[gen_counter_key] += 1
+    
+    if st.session_state[gen_counter_key] > 0:
+        np.random.seed(abs(total_rows + st.session_state[gen_counter_key] * 555) % (2**31 - 1))
+        p_nums = sorted(np.random.choice(range(1, 50), selected_count, replace=False).tolist())
+        p_spec = int(np.random.randint(0, 10))
+        display_numbers(p_nums, p_spec, "Superzahl (0-9)")
+
+    st.markdown("---")
+
+    # 3. نافذة تاريخ الميلاد المستقلة
+    st.markdown(f"### {t['birth_title']}")
+    b_date = st.date_input(t["birth_select"], value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
+    birth_key = f"counter_birth_{game_name}"
+    if birth_key not in st.session_state: st.session_state[birth_key] = 0
+    if st.button(t["birth_btn"], key=f"btn_birth_{game_name}"): st.session_state[birth_key] += 1
+
+    if st.session_state[birth_key] > 0:
+        seed_val = b_date.year * 10000 + b_date.month * 100 + b_date.day
+        np.random.seed(seed_val % (2**31 - 1))
+        b_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+        b_spec = int(b_date.day % 10)
+        display_numbers(b_nums, b_spec, "Superzahl (0-9)")
+
+    st.markdown("---")
+
+    # 4. نافذة الأبراج الفلكية المستقلة
+    st.markdown(f"### {t['zodiac_title']}")
+    zodiac_signs = ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"]
+    z_choice = st.selectbox(t["zodiac_select"], zodiac_signs, key=f"z_choice_{game_name}")
+    zodiac_key = f"counter_zodiac_{game_name}"
+    if zodiac_key not in st.session_state: st.session_state[zodiac_key] = 0
+    if st.button(t["zodiac_btn"], key=f"btn_zodiac_{game_name}"): st.session_state[zodiac_key] += 1
+
+    if st.session_state[zodiac_key] > 0:
+        z_idx = zodiac_signs.index(z_choice) + 1
+        np.random.seed((z_idx * 9999) % (2**31 - 1))
+        z_nums = sorted(np.random.choice(range(1, 50), 6, replace=False).tolist())
+        z_spec = int(z_idx % 10)
+        display_numbers(z_nums, z_spec, "Superzahl (0-9)")
 
 with tab1:
-    run_archive_search_tab(df_lotto, "Lotto", files_lotto, False)
+    run_full_features_tab(df_lotto, "Lotto", files_lotto, False)
 
 with tab2:
-    run_archive_search_tab(df_euro, "Eurojackpot", files_euro, True)
+    run_full_features_tab(df_euro, "Eurojackpot", files_euro, True)
