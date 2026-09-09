@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 st.set_page_config(
-    page_title="Lottery Exact Engine 2026", 
+    page_title="Lottery Exact Historical Engine", 
     page_icon="🎯", 
     layout="wide",
     initial_sidebar_state="expanded"
@@ -28,15 +28,10 @@ st.markdown("""
         padding: 20px; border-radius: 15px; color: white; text-align: center;
         box-shadow: 0 8px 16px rgba(0,0,0,0.1); margin-bottom: 20px;
     }
-    .formula-box {
+    .draw-box {
         background-color: #ffffff; border-right: 5px solid #1f77b4;
         padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         margin-bottom: 15px; font-family: monospace;
-    }
-    .intersection-box {
-        background-color: #e8f4fd; border: 2px dashed #1f77b4;
-        padding: 20px; border-radius: 10px; margin-top: 25px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
     .stButton>button {
         width: 100%; border-radius: 10px; font-weight: bold; height: 45px;
@@ -59,89 +54,47 @@ with st.sidebar:
     st.markdown("### 🌐 Language / اللغات / Sprache")
     lang_choice = st.selectbox("اختر اللغة / Choose Language:", ["العربية", "English", "Deutsch"])
     st.markdown("---")
-    st.info("محرك المطابقة الدقيقة لأرقام السحوبات التاريخية وتوقع 2026.")
+    st.info("محرك استخراج سحوبات التاريخ المطابقة لنفس اليوم والشهر.")
 
 texts = {
     "العربية": {
-        "title": "🎯 المحرك الرياضي لاستخراج سحوبات التاريخ وتوقع 2026",
+        "title": "🎯 محرك استخراج السحوبات التاريخية حسب اليوم والشهر",
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات من الجدول واستخراج الأرقام بدقة",
+        "search_title": "📅 مطابقة واستخراج سحوبات نفس اليوم والشهر عبر كل السنوات",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
-        "calc_btn": "⚡ بدء استخراج المعادلات من الجدول وحساب توقعات 2026",
-        "found_res": "✅ السحوبات التاريخية المطابقة من الجدول:",
-        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم الشهر في الجدول.",
+        "search_btn": "🔍 عرض كافة السحوبات التاريخية لهذا اليوم والشهر",
+        "found_res": "✅ السحوبات التاريخية المطابقة في الأرشيف:",
+        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر في الجدول.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
-        "schein_type": "نوع الورقة (Tippschein Type):",
-        "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
-        "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
-        "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
-        "select_euro_system": "اختر نظام يوروجاكبوت (System):",
-        "gen_title": "🎲 مركز توليد التوقعات الذكية",
-        "gen_btn": "🚀 توليد الأرقام والتحليل الاعتيادي",
-        "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
-        "birth_select": "حدد تاريخ ميلادك:",
-        "birth_btn": "🎲 توليد أرقام 2026 (تاريخ الميلاد)",
-        "zodiac_title": "🌟 نافذة الأبراج الفلكية المستقلة",
-        "zodiac_select": "اختر برجك الفلكي:",
-        "zodiac_btn": "🎲 توليد أرقام 2026 (البرج الفلكي)",
-        "power_label": "⚡ قوة الاقتراح والموثوقية:"
     },
     "English": {
-        "title": "🎯 Archive Table Extraction & 2026 Prediction Engine",
+        "title": "🎯 Historical Draws Extraction Engine by Day & Month",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Table Draws & Extract Numbers Accurately",
+        "search_title": "📅 Match & Extract Draws for Same Day & Month Across Years",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
-        "calc_btn": "⚡ Run Table Equations & 2026 Prediction",
-        "found_res": "✅ Matched Historical Draws from Table:",
-        "no_res": "⚠️ No matching draws found in table.",
+        "search_btn": "🔍 Show All Historical Draws for This Day & Month",
+        "found_res": "✅ Matched Historical Draws in Archive:",
+        "no_res": "⚠️ No matching draws found for this day and month in the table.",
         "expander_title": "👁️ View Complete Archive",
-        "schein_type": "Tippschein Type:",
-        "normal_schein": "Normal Schein (6 numbers)",
-        "system_schein": "System Schein (Extended & Combinations)",
-        "select_lotto_system": "Select Lotto System Count (Vollsystem):",
-        "select_euro_system": "Select Eurojackpot System:",
-        "gen_title": "🎲 Smart Prediction Center",
-        "gen_btn": "🚀 Generate Numbers & Standard Analysis",
-        "birth_title": "📅 Independent Birthdate Window",
-        "birth_select": "Select your birthdate:",
-        "birth_btn": "🎲 Generate 2026 Numbers (Birthdate)",
-        "zodiac_title": "🌟 Independent Zodiac Window",
-        "zodiac_select": "Select your Zodiac Sign:",
-        "zodiac_btn": "🎲 Generate 2026 Numbers (Zodiac)",
-        "power_label": "⚡ Prediction Power & Confidence:"
     },
     "Deutsch": {
-        "title": "🎯 Archiv-Tabellenextraktion & 2026 Prognose-Engine",
+        "title": "🎯 Historische Ziehungs-Extraktions-Engine nach Tag & Monat",
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Tabellen-Ziehungen matchen & Zahlen exakt extrahieren",
+        "search_title": "📅 Ziehungen für denselben Tag & Monat über alle Jahre matchen",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
-        "calc_btn": "⚡ Tabellen-Gleichungen & 2026 Prognose starten",
-        "found_res": "✅ Passende historische Ziehungen aus der Tabelle:",
-        "no_res": "⚠️ Keine passenden Ziehungen in der Tabelle gefunden.",
+        "search_btn": "🔍 Alle historischen Ziehungen für diesen Tag & Monat anzeigen",
+        "found_res": "✅ Passende historische Ziehungen im Archiv:",
+        "no_res": "⚠️ Keine passenden Ziehungen für diesen Tag und Monat gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
-        "schein_type": "Tippschein-Typ:",
-        "normal_schein": "Normaler Schein (6 Zahlen)",
-        "system_schein": "Systemschein (Erweiterte Kombinationen)",
-        "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
-        "select_euro_system": "Eurojackpot System wählen:",
-        "gen_title": "🎲 Intelligentes Prognose-Center",
-        "gen_btn": "🚀 Zahlen & Standard-Analyse generieren",
-        "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
-        "birth_select": "Geburtsdatum wählen:",
-        "birth_btn": "🎲 2026 Zahlen generieren (Geburtsdatum)",
-        "zodiac_title": "🌟 Unabhängiges Sternzeichen-Fenster",
-        "zodiac_select": "Sternzeichen wählen:",
-        "zodiac_btn": "🎲 2026 Zahlen generieren (Sternzeichen)",
-        "power_label": "⚡ Vorhersagestärke & Konfidenz:"
     }
 }
 
@@ -178,11 +131,11 @@ tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 
 def display_numbers(numbers, special_num, special_label="Superzahl"):
     nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in numbers])
-    spec_html = "".join([f"<span class='special-badge'>{s}</span>" for s in special_num]) if isinstance(special_num, list) else f"<span class='special-badge'>{special_num}</span>"
-    st.markdown(f"**Selected Numbers ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
-    st.markdown(f"<br>**{special_label}:**<br>{spec_html}", unsafe_allow_html=True)
+    spec_html = f"<span class='special-badge'>{special_num}</span>"
+    st.markdown(f"**أرقام السحب الأساسية:** {nums_html}", unsafe_allow_html=True)
+    st.markdown(f"**{special_label}:** {spec_html}", unsafe_allow_html=True)
 
-def run_full_features_tab(df, game_name, matched_files, is_euro=False):
+def run_archive_search_tab(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'General Files'}`")
     if df.empty:
         st.error(f"⚠️ No files found for {game_name}.")
@@ -191,8 +144,8 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     total_rows = len(df)
     st.markdown(f"""
         <div class="metric-card">
-            <h2>📊 {game_name} Archive Table & Sorted Engine</h2>
-            <h3>Total Historical Rows: {total_rows}</h3>
+            <h2>📊 {game_name} Historical Archive</h2>
+            <h3>Total Records: {total_rows}</h3>
         </div>
     """, unsafe_allow_html=True)
     
@@ -200,14 +153,14 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.markdown(f"### {t['search_title']}")
         col_d, col_m = st.columns(2)
         with col_d:
-            selected_day = st.selectbox(t["target_day"], list(range(1, 32)), index=8, key=f"p_day_{game_name}")
+            selected_day = st.selectbox(t["target_day"], list(range(1, 32)), index=0, key=f"s_day_{game_name}")
         with col_m:
             months_dict = {
                 "يناير (01)": 1, "فبراير (02)": 2, "مارس (03)": 3, "أبريل (04)": 4,
                 "مايو (05)": 5, "يونيو (06)": 6, "يوليو (07)": 7, "أغسطس (08)": 8,
                 "سبتمبر (09)": 9, "أكتوبر (10)": 10, "نوفمبر (11)": 11, "ديسمبر (12)": 12
             }
-            selected_month_name = st.selectbox(t["target_month"], list(months_dict.keys()), index=8, key=f"p_mon_{game_name}")
+            selected_month_name = st.selectbox(t["target_month"], list(months_dict.keys()), index=10, key=f"s_mon_{game_name}")
             selected_month_num = months_dict[selected_month_name]
             
         matched_rows = []
@@ -229,22 +182,29 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 if is_matched:
                     matched_rows.append((idx, row))
 
-        if st.button(t["calc_btn"], key=f"btn_formula_{game_name}"):
+        if st.button(t["search_btn"], key=f"btn_search_{game_name}"):
             st.markdown("---")
             max_range = 49
             special_name = "Superzahl (0-9)"
 
             if matched_rows:
-                res_df = pd.DataFrame([r[1] for r in matched_rows])
-                st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
-                st.dataframe(res_df, use_container_width=True)
+                st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات المكتشفة: {len(matched_rows)}")
                 
-                st.markdown("### 🧮 استخراج الأرقام بدقة مطابقة لأعمدة الجدول الفعلية:")
-                
-                for count, (original_idx, r) in enumerate(matched_rows, start=1):
+                for original_idx, r in matched_rows:
                     row_vals = list(r.values)
                     
-                    # استخراج الأرقام الستة الأساسية بدقة من الأعمدة المخصصة (افتراض الأطياف D إلى I تعادل الإندكس 3 إلى 8 في بايثون)
+                    # استخراج التاريخ إن وجد في الصف (لبحثه وعرضه بدقة)
+                    full_date_str = "غير محدد"
+                    for val in row_vals[:3]:
+                        dt = pd.to_datetime(val, errors='coerce')
+                        if pd.notna(dt):
+                            full_date_str = dt.strftime('%d.%m.%Y')
+                            break
+                        elif pd.notna(val) and ("." in str(val) or "-" in str(val)):
+                            full_date_str = str(val)
+                            break
+
+                    # استخراج الأرقام الأساسية بدقة من الأعمدة D إلى I (الإندكس 3 إلى 8 في بايثون)
                     core_nums = []
                     for col_idx in range(3, min(9, len(row_vals))):
                         try:
@@ -253,14 +213,9 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                 core_nums.append(int(vf))
                         except:
                             pass
-                    
-                    if len(core_nums) < 6:
-                        while len(core_nums) < 6:
-                            fallback_n = ((len(core_nums) + 1) * selected_day) % max_range + 1
-                            if fallback_n not in core_nums: core_nums.append(fallback_n)
                     core_nums = core_nums[:6]
 
-                    # استخراج السوبر زاهل بدقة من العمود المخصص (العمود K يعادل الإندكس 10 في بايثون)
+                    # استخراج الـ Superzahl بدقة من العمود K (الإندكس 10)
                     spec_val = 0
                     if len(row_vals) > 10:
                         try:
@@ -270,73 +225,21 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                         except:
                             spec_val = 0
 
-                    formulas_html = ""
-                    for pos_idx, num_val in enumerate(core_nums, start=1):
-                        calc_check = (num_val * selected_day * pos_idx) % max_range + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
-
-                    spec_calc_check = (spec_val * selected_month_num) % 10
-                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>Superzahl الفعلي ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % 10 = {spec_calc_check}</code>"
-
                     st.markdown(f"""
-                    <div class="formula-box">
-                        <b>السحب التاريخي رقم ({original_idx}) المطابق للجدول:</b><br>
-                        📌 <b>الأرقام الفعلية من أعمدة الجدول:</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
-                        <br>📐 <b>معادلة الأرقام المستخرجة:</b><br>
-                        {formulas_html}
+                    <div class="draw-box">
+                        <b>📌 سحب تاريخ: <span style="color:#d9534f;">{full_date_str}</span> (رقم الصف في الملف: {original_idx})</b><br><br>
+                        <b>أرقام السحب الفعلية:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in core_nums])}<br>
+                        <b>{special_name}:</b> <span class='special-badge'>{spec_val}</span>
                     </div>
                     """, unsafe_allow_html=True)
             else:
                 st.warning(t["no_res"])
 
-            st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
-            st.markdown(f"### 🎯 ثانياً: معادلة وتوقع سحب اليوم ($\mathbf{{09.09.2026}}$) استناداً إلى تحليل الجدول:")
-            
-            current_date_nums = []
-            for pos_idx in range(1, 7):
-                gen_val = ((selected_day * selected_month_num * pos_idx) + 2026) % max_range + 1
-                while gen_val in current_date_nums:
-                    gen_val = (gen_val + 1) % max_range + 1
-                current_date_nums.append(gen_val)
-            current_date_nums.sort()
-            
-            curr_special = (selected_day * selected_month_num) % 10
-
-            st.markdown(f"**معادلات توليد أرقام سحب اليوم (تاريخ اليوم: {selected_day}.{selected_month_num}.2026):**")
-            for pos_idx, num_val in enumerate(current_date_nums, start=1):
-                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم المتوقع ({pos_idx}):</b> <code>Formula(pos_{pos_idx}) = (Day[{selected_day}] × Month[{selected_month_num}] × {pos_idx} + 2026) % {max_range} + 1 = <b>{num_val}</b></code>", unsafe_allow_html=True)
-            
-            st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>Superzahl المتوقع (من 0 إلى 9):</b> <code style='color:#d9534f;'>Super_Formula = (Day[{selected_day}] × Month[{selected_month_num}]) % 10 = <b>{curr_special}</b></code>", unsafe_allow_html=True)
-            
-            st.markdown("<br>**الرؤية النهائية لأرقام سحب اليوم (مُرتّبة تصاعدياً):**")
-            display_numbers(current_date_nums, curr_special, special_name)
-            st.markdown("</div>", unsafe_allow_html=True)
-
         with st.expander(t["expander_title"]):
             st.dataframe(df, use_container_width=True)
-            
-    st.markdown("---")
-    
-    st.markdown(f"### {t['gen_title']}")
-    schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_{game_name}")
-    selected_count = 6
-    
-    if schein_mode == t["system_schein"]:
-        lotto_sys_choice = st.selectbox(t["select_lotto_system"], ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"], key=f"l_sys_{game_name}")
-        selected_count = int(lotto_sys_choice.split()[1])
-
-    gen_counter_key = f"counter_gen_{game_name}"
-    if gen_counter_key not in st.session_state: st.session_state[gen_counter_key] = 0
-    if st.button(t["gen_btn"], key=f"btn_gen_{game_name}"): st.session_state[gen_counter_key] += 1
-    
-    if st.session_state[gen_counter_key] > 0:
-        np.random.seed(abs(total_rows + st.session_state[gen_counter_key] * 555) % (2**31 - 1))
-        p_nums = sorted(np.random.choice(range(1, 50), selected_count, replace=False).tolist())
-        p_spec = int(np.random.randint(0, 10))
-        display_numbers(p_nums, p_spec, "Superzahl (0-9)")
 
 with tab1:
-    run_full_features_tab(df_lotto, "Lotto", files_lotto, False)
+    run_archive_search_tab(df_lotto, "Lotto", files_lotto, False)
 
 with tab2:
-    run_full_features_tab(df_euro, "Eurojackpot", files_euro, True)
+    run_archive_search_tab(df_euro, "Eurojackpot", files_euro, True)
