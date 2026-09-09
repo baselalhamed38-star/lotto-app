@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import os
+import random
 
 st.set_page_config(
     page_title="True Date Formula Engine 2026", 
@@ -73,8 +74,8 @@ texts = {
         "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
         "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
         "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
-        "gen_title": "📅 قسم التوقعات والأربع احتمالات لسنة 2026",
-        "gen_btn": "🚀 توليد 4 احتمالات للأرقام",
+        "gen_title": "📅 قسم التوقعات والأربع احتمالات المتجددة لسنة 2026",
+        "gen_btn": "🚀 توليد 4 احتمالات جديدة",
         "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
         "birth_select": "حدد تاريخ ميلادك:",
         "birth_btn": "🎲 توليد أرقام (تاريخ الميلاد)",
@@ -98,8 +99,8 @@ texts = {
         "normal_schein": "Normal Schein (6 numbers)",
         "system_schein": "System Schein (Extended & Combinations)",
         "select_lotto_system": "Select Lotto System Count (Vollsystem):",
-        "gen_title": "📅 2026 Date-Seed 4 Possibilities Center",
-        "gen_btn": "🚀 Generate 4 Possibilities",
+        "gen_title": "📅 2026 Date-Seed 4 New Possibilities Center",
+        "gen_btn": "🚀 Generate 4 New Possibilities",
         "birth_title": "📅 Independent Birthdate Window",
         "birth_select": "Select your birthdate:",
         "birth_btn": "🎲 Generate Numbers (Birthdate)",
@@ -123,8 +124,8 @@ texts = {
         "normal_schein": "Normaler Schein (6 Zahlen)",
         "system_schein": "Systemschein",
         "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
-        "gen_title": "📅 2026 Prognose-Center (4 Möglichkeiten)",
-        "gen_btn": "🚀 4 Möglichkeiten generieren",
+        "gen_title": "📅 2026 Prognose-Center (Neue Möglichkeiten)",
+        "gen_btn": "🚀 4 neue Möglichkeiten generieren",
         "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
         "birth_select": "Geburtsdatum wählen:",
         "birth_btn": "🎲 Zahlen generieren (Geburtsdatum)",
@@ -192,7 +193,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         </div>
     """, unsafe_allow_html=True)
     
-    # 1. مطابقة السحوبات التاريخية
     with st.container():
         st.markdown(f"### {t['search_title']}")
         col_d, col_m = st.columns(2)
@@ -225,148 +225,4 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                 if is_matched:
                     matched_rows.append((idx, row))
 
-        if st.button(t["search_btn"], key=f"btn_search_{game_name}"):
-            st.markdown("---")
-            max_range = 50 if is_euro else 49
-            special_name = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
-
-            if matched_rows:
-                st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
-                
-                for original_idx, r in matched_rows:
-                    row_vals = list(r.values)
-                    full_date_str = "غير محدد"
-                    extracted_year = 2026
-                    for val in row_vals[:3]:
-                        if pd.notna(val):
-                            v_s = str(val).strip()
-                            if "." in v_s or "-" in v_s:
-                                full_date_str = v_s
-                                dt_parsed = pd.to_datetime(v_s, errors='coerce', dayfirst=True)
-                                if pd.notna(dt_parsed):
-                                    extracted_year = dt_parsed.year
-                                break
-
-                    core_nums = []
-                    for col_idx in range(3, min(9, len(row_vals))):
-                        try:
-                            vf = float(row_vals[col_idx])
-                            if 1 <= vf <= max_range:
-                                core_nums.append(int(vf))
-                        except:
-                            pass
-                    core_nums = core_nums[:5 if is_euro else 6]
-
-                    spec_val = 0
-                    if len(row_vals) > 10:
-                        try: spec_val = int(float(row_vals[10]))
-                        except: spec_val = 0
-
-                    gen_nums, gen_spec, seed_v = generate_date_seed_numbers(
-                        extracted_year, selected_month_num, selected_day, len(core_nums) if core_nums else 6, max_range
-                    )
-
-                    st.markdown(f"""
-                    <div class="formula-box">
-                        <b>📌 سحب تاريخ: <span style="color:#d9534f;">{full_date_str}</span> (الصف: {original_idx})</b><br><br>
-                        <b>أرقام الأرشيف الفعلية:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in core_nums])} | <b>{special_name}:</b> <span class='special-badge'>{spec_val}</span><br><br>
-                        🔑 <b>المفتاح الزمني للتاريخ (Seed):</b> <code>{seed_v}</code><br>
-                        🎯 <b>الأرقام المتولدة برمجياً لنفس التاريخ:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in gen_nums])} | <b>الخاصة:</b> <span class='special-badge'>{gen_spec}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.warning(t["no_res"])
-
-        with st.expander(t["expander_title"]):
-            st.dataframe(df, use_container_width=True)
-            
-    st.markdown("---")
-    
-    # 2. قسم توقعات سنة 2026 (توليد 4 احتمالات)
-    st.markdown(f"### {t['gen_title']}")
-    
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        target_year_2026 = st.number_input("السنة:", value=2026, min_value=2026, max_value=2030, key=f"y_2026_{game_name}")
-    with col_t2:
-        target_date_2026 = st.date_input("اختر التاريخ في 2026:", value=datetime(2026, 9, 9), key=f"d_2026_{game_name}")
-
-    schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_2026_{game_name}")
-    selected_count = 5 if is_euro else 6
-    max_limit = 50 if is_euro else 49
-
-    if schein_mode == t["system_schein"]:
-        sys_options = ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"]
-        lotto_sys_choice = st.selectbox(t["select_lotto_system"], sys_options, key=f"l_sys_2026_{game_name}")
-        selected_count = int(lotto_sys_choice.split()[1])
-
-    gen_counter_key = f"counter_gen_2026_{game_name}"
-    if gen_counter_key not in st.session_state: st.session_state[gen_counter_key] = 0
-    if st.button(t["gen_btn"], key=f"btn_gen_2026_{game_name}"): st.session_state[gen_counter_key] += 1
-    
-    if st.session_state[gen_counter_key] > 0:
-        y = target_date_2026.year
-        m = target_date_2026.month
-        d = target_date_2026.day
-        
-        base_seed_val = (y * 10000) + (m * 100) + d
-        
-        st.markdown(f"""
-        <div class="formula-box">
-            <b>📅 تفاصيل المفتاح الزمني لتاريخ {target_date_2026.strftime('%d.%m.%Y')}:</b><br>
-            • مفتاح البذرة الأساسي (Seed) = <code>{base_seed_val}</code>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # توليد 4 احتمالات مختلفة بتغيير بسيط في Seed لكل احتمال
-        st.markdown("### 🎲 الاحتمالات الأربعة المقترحة:")
-        for i in range(1, 5):
-            current_seed = base_seed_val + (i * 111) # تغيير طفيف لتوليد تنوع في الاحتمالات الأربعة
-            np.random.seed(current_seed % (2**31 - 1))
-            p_nums = sorted(np.random.choice(range(1, max_limit + 1), selected_count, replace=False).tolist())
-            p_spec = (base_seed_val + i) % (12 if is_euro else 10)
-            
-            nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in p_nums])
-            spec_html = f"<span class='special-badge'>{p_spec}</span>"
-            spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
-            
-            st.markdown(f"""
-            <div style="background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:10px;">
-                <b>الاحتمال رقم ({i}):</b><br>
-                {nums_html} | <b>{spec_label}:</b> {spec_html}
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # 3. نافذة تاريخ الميلاد المستقلة
-    st.markdown(f"### {t['birth_title']}")
-    b_date = st.date_input(t["birth_select"], value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
-    birth_key = f"counter_birth_{game_name}"
-    if birth_key not in st.session_state: st.session_state[birth_key] = 0
-    if st.button(t["birth_btn"], key=f"btn_birth_{game_name}"): st.session_state[birth_key] += 1
-
-    if st.session_state[birth_key] > 0:
-        b_nums, b_spec, _ = generate_date_seed_numbers(b_date.year, b_date.month, b_date.day, 6, max_limit)
-        display_numbers(b_nums, b_spec, "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)")
-
-    st.markdown("---")
-
-    # 4. نافذة الأبراج الفلكية المستقلة
-    st.markdown(f"### {t['zodiac_title']}")
-    zodiac_signs = ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"]
-    z_choice = st.selectbox(t["zodiac_select"], zodiac_signs, key=f"z_choice_{game_name}")
-    zodiac_key = f"counter_zodiac_{game_name}"
-    if zodiac_key not in st.session_state: st.session_state[zodiac_key] = 0
-    if st.button(t["zodiac_btn"], key=f"btn_zodiac_{game_name}"): st.session_state[zodiac_key] += 1
-
-    if st.session_state[zodiac_key] > 0:
-        z_idx = zodiac_signs.index(z_choice) + 1
-        z_nums, z_spec, _ = generate_date_seed_numbers(2026, z_idx, z_idx, 6, max_limit)
-        display_numbers(z_nums, z_spec, "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)")
-
-with tab1:
-    run_full_features_tab(df_lotto, "Lotto", files_lotto, False)
-
-with tab2:
-    run_full_features_tab(df_euro, "Eurojackpot", files_euro, True)
+        if st.button(t["search_btn"], key=f"btn_search_{game_name}
