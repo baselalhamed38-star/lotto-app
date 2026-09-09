@@ -166,10 +166,10 @@ df_euro, files_euro = load_game_files("euro")
 tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 
 def generate_date_seed_numbers(year, month, day, count=6, max_val=49, modifier=0):
-    seed_val = (year * 10000) + (month * 100) + day + modifier
-    np.random.seed(seed_val % (2**31 - 1))
+    seed_val = (year * 10000) + (month * 100) + day
+    np.random.seed((seed_val + modifier) % (2**31 - 1))
     nums = sorted(np.random.choice(range(1, max_val + 1), count, replace=False).tolist())
-    spec_val = (year + month + day + modifier) % (12 if max_val == 50 else 10)
+    spec_val = (seed_val + modifier) % (12 if max_val == 50 else 10)
     return nums, spec_val, seed_val
 
 def run_full_features_tab(df, game_name, matched_files, is_euro=False):
@@ -306,19 +306,18 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         d = target_date_2026.day
         
         base_seed_val = (y * 10000) + (m * 100) + d
-        click_factor = st.session_state[gen_counter_key] * 37
         
         st.markdown(f"""
         <div class="formula-box">
             <b>📅 تفاصيل المفتاح الزمني لتاريخ {target_date_2026.strftime('%d.%m.%Y')}:</b><br>
-            • مفتاح البذرة الأساسي (Seed) = <code>{base_seed_val}</code> (محاولة رقم: {st.session_state[gen_counter_key]})
+            • مفتاح البذرة الأساسي الثابت (Seed) = <code>{base_seed_val}</code>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("### 🎲 الاحتمالات الأربعة المقترحة:")
         for i in range(1, 5):
-            modifier = click_factor + (i * 123)
-            p_nums, p_spec, seed_v = generate_date_seed_numbers(y, m, d, selected_count, max_limit, modifier)
+            modifier = (st.session_state[gen_counter_key] * 100) + (i * 999)
+            p_nums, p_spec, _ = generate_date_seed_numbers(y, m, d, selected_count, max_limit, modifier)
             
             nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in p_nums])
             spec_html = f"<span class='special-badge'>{p_spec}</span>"
@@ -326,7 +325,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
             st.markdown(f"""
             <div style="background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:10px;">
-                <b>الاحتمال رقم ({i}):</b> (Seed: {seed_v})<br>
+                <b>الاحتمال رقم ({i}):</b> (Seed: {base_seed_val})<br>
                 {nums_html} | <b>{spec_label}:</b> {spec_html}
             </div>
             """, unsafe_allow_html=True)
@@ -343,7 +342,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         
     if st.session_state[birth_key] > 0:
         b_nums, b_spec, b_seed = generate_date_seed_numbers(b_date.year, b_date.month, b_date.day, selected_count, max_limit, st.session_state[birth_key] * 53)
-        display_numbers(b_nums, b_spec, "Superzahl / Eurozahl" if is_euro else "Superzahl (0-9)")
+        st.markdown(f"<b>مفتاح البذرة (Seed):</b> <code>{b_seed}</code>", unsafe_allow_html=True)
+        nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in b_nums])
+        spec_html = f"<span class='special-badge'>{b_spec}</span>"
+        spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+        st.markdown(f"<div style='background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px;'>{nums_html} | <b>{spec_label}:</b> {spec_html}</div>", unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -359,7 +362,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     if st.session_state[zodiac_key] > 0:
         z_idx = zodiac_signs.index(z_choice) + 1
         z_nums, z_spec, z_seed = generate_date_seed_numbers(2026, z_idx, 15, selected_count, max_limit, st.session_state[zodiac_key] * 71)
-        display_numbers(z_nums, z_spec, "Superzahl / Eurozahl" if is_euro else "Superzahl (0-9)")
+        st.markdown(f"<b>مفتاح البذرة (Seed):</b> <code>{z_seed}</code>", unsafe_allow_html=True)
+        nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in z_nums])
+        spec_html = f"<span class='special-badge'>{z_spec}</span>"
+        spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+        st.markdown(f"<div style='background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px;'>{nums_html} | <b>{spec_label}:</b> {spec_html}</div>", unsafe_allow_html=True)
 
 with tab1:
     run_full_features_tab(df_lotto, "Lotto", files_lotto, is_euro=False)
