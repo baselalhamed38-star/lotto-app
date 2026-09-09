@@ -165,12 +165,6 @@ df_euro, files_euro = load_game_files("euro")
 
 tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 
-def display_numbers(numbers, special_num, special_label="Superzahl (0-9)"):
-    nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in numbers])
-    spec_html = f"<span class='special-badge'>{special_num}</span>"
-    st.markdown(f"**الأرقام الناتجة ({len(numbers)}):**<br>{nums_html}", unsafe_allow_html=True)
-    st.markdown(f"<br>**{special_label}:** {spec_html}", unsafe_allow_html=True)
-
 def generate_date_seed_numbers(year, month, day, count=6, max_val=49, modifier=0):
     seed_val = (year * 10000) + (month * 100) + day + modifier
     np.random.seed(seed_val % (2**31 - 1))
@@ -282,7 +276,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             
     st.markdown("---")
     
-    # 2. قسم توقعات سنة 2026 (توليد 4 احتمالات متجددة)
     st.markdown(f"### {t['gen_title']}")
     
     col_t1, col_t2 = st.columns(2)
@@ -313,7 +306,6 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         d = target_date_2026.day
         
         base_seed_val = (y * 10000) + (m * 100) + d
-        # نربط التجديد بعدد مرات الضغط ليتغير في كل ضغطة زر جديدة
         click_factor = st.session_state[gen_counter_key] * 37
         
         st.markdown(f"""
@@ -341,9 +333,36 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
 
     st.markdown("---")
 
-    # 3. نافذة تاريخ الميلاد المستقلة
     st.markdown(f"### {t['birth_title']}")
     b_date = st.date_input(t["birth_select"], value=datetime(1990, 1, 1), key=f"b_date_{game_name}")
     birth_key = f"counter_birth_{game_name}"
     if birth_key not in st.session_state: st.session_state[birth_key] = 0
-    if st.button(t["birth_btn"], key=f"btn_birth_{game_name}
+    
+    if st.button(t["birth_btn"], key=f"btn_birth_{game_name}"):
+        st.session_state[birth_key] += 1
+        
+    if st.session_state[birth_key] > 0:
+        b_nums, b_spec, b_seed = generate_date_seed_numbers(b_date.year, b_date.month, b_date.day, selected_count, max_limit, st.session_state[birth_key] * 53)
+        display_numbers(b_nums, b_spec, "Superzahl / Eurozahl" if is_euro else "Superzahl (0-9)")
+
+    st.markdown("---")
+    
+    st.markdown(f"### {t['zodiac_title']}")
+    zodiac_signs = ["الحمل (Aries)", "الثور (Taurus)", "الجوزاء (Gemini)", "السرطان (Cancer)", "الأسد (Leo)", "العذراء (Virgo)", "الميزان (Libra)", "العقرب (Scorpio)", "القوس (Sagittarius)", "الجدي (Capricorn)", "الدلو (Aquarius)", "الحوت (Pisces)"]
+    z_choice = st.selectbox(t["zodiac_select"], zodiac_signs, key=f"z_choice_{game_name}")
+    zodiac_key = f"counter_zodiac_{game_name}"
+    if zodiac_key not in st.session_state: st.session_state[zodiac_key] = 0
+    
+    if st.button(t["zodiac_btn"], key=f"btn_zodiac_{game_name}"):
+        st.session_state[zodiac_key] += 1
+        
+    if st.session_state[zodiac_key] > 0:
+        z_idx = zodiac_signs.index(z_choice) + 1
+        z_nums, z_spec, z_seed = generate_date_seed_numbers(2026, z_idx, 15, selected_count, max_limit, st.session_state[zodiac_key] * 71)
+        display_numbers(z_nums, z_spec, "Superzahl / Eurozahl" if is_euro else "Superzahl (0-9)")
+
+with tab1:
+    run_full_features_tab(df_lotto, "Lotto", files_lotto, is_euro=False)
+
+with tab2:
+    run_full_features_tab(df_euro, "Eurojackpot", files_euro, is_euro=True)
