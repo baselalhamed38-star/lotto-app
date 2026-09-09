@@ -67,12 +67,12 @@ texts = {
         "lotto_tab": "🍀 اللوتو (Lotto)",
         "euro_tab": "💶 يوروجاكبوت (Eurojackpot)",
         "file_info": "📁 الملفات المرتبطة بالقاعدة:",
-        "search_title": "📅 مطابقة السحوبات من الجدول واستخراج الأرقام تصاعدياً",
+        "search_title": "📅 مطابقة السحوبات من الجدول واستخراج الأرقام بدقة",
         "target_day": "اختر اليوم:",
         "target_month": "اختر الشهر:",
         "calc_btn": "⚡ بدء استخراج المعادلات من الجدول وحساب توقعات 2026",
         "found_res": "✅ السحوبات التاريخية المطابقة من الجدول:",
-        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر في الجدول.",
+        "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم الشهر في الجدول.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
         "schein_type": "نوع الورقة (Tippschein Type):",
         "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
@@ -94,7 +94,7 @@ texts = {
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Associated Files:",
-        "search_title": "📅 Match Table Draws & Extract Numbers Ascending",
+        "search_title": "📅 Match Table Draws & Extract Numbers Accurately",
         "target_day": "Select Day:",
         "target_month": "Select Month:",
         "calc_btn": "⚡ Run Table Equations & 2026 Prediction",
@@ -121,7 +121,8 @@ texts = {
         "lotto_tab": "🍀 Lotto",
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
-        "search_title": "📅 Tabellen-Ziehungen matchen & Zahlen aufsteigend extrahieren",
+        "search_title": "📅 Tabellen-Ziehungen matchen & Zahlen exakt extrahieren",
+        "tag": "Tag wählen:",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
         "calc_btn": "⚡ Tabellen-Gleichungen & 2026 Prognose starten",
@@ -234,80 +235,58 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             max_range = 50 if is_euro else 49
             special_limit = 10 if not is_euro else 12
             special_name = "Euro Zahlen (Stars)" if is_euro else "Superzahl"
-            pick_count = 5 if is_euro else 6
-
-            all_historical_extracted_sets = []
-            all_historical_specials = []
+            pick_count = 6 if not is_euro else 5
 
             if matched_rows:
                 res_df = pd.DataFrame([r[1] for r in matched_rows])
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
                 st.dataframe(res_df, use_container_width=True)
                 
-                st.markdown("### 🧮 أولاً: معادلات استخراج أرقام السحوبات التاريخية (مطابقة لرقم السحب في الجدول تماماً):")
+                st.markdown("### 🧮 أولاً: استخراج الأرقام الفعلية من أعمدة الجدول تماماً بالترتيب:")
                 
                 for count, (original_idx, r) in enumerate(matched_rows, start=1):
                     row_vals = list(r.values)
                     
-                    filtered_valid = []
-                    for val in row_vals:
+                    # استخراج الأرقام من أعمدة السحب الثابتة (تجاوز الفهرس وتاريخ السحب عبر بدء الاستخراج من العمود 2 أو 3 حسب تخطيط الجدول)
+                    extracted_raw = []
+                    for val in row_vals[2:]: # تخطي الأعمدة الأولى المخصصة للفهرس أو التواريخ
                         try:
                             vf = float(val)
                             if 1 <= vf <= max_range:
-                                int_v = int(vf)
-                                if int_v not in filtered_valid:
-                                    filtered_valid.append(int_v)
+                                extracted_raw.append(int(vf))
                         except:
                             pass
                     
-                    filtered_valid.sort()
-                    core_nums = filtered_valid[:pick_count]
-                    
+                    # أخذ الأرقام الأساسية للسحب بالترتيب الظاهر في الجدول (أول 6 أرقام)
+                    core_nums = extracted_raw[:pick_count]
                     if len(core_nums) < pick_count:
                         while len(core_nums) < pick_count:
                             fallback_n = ((len(core_nums) + 1) * selected_day) % max_range + 1
                             if fallback_n not in core_nums: core_nums.append(fallback_n)
-                        core_nums.sort()
 
-                    spec_val = 3 
-                    for val in row_vals:
-                        try:
-                            vf = float(val)
-                            if 0 <= vf < special_limit and int(vf) != core_nums[0]:
-                                spec_val = int(vf)
-                                break
-                        except:
-                            pass
-
-                    all_historical_extracted_sets.append(set(core_nums))
-                    all_historical_specials.append(spec_val)
+                    # أخذ الرقم الإضافي (Superzahl) إذا وجد، وإلا افتراضي
+                    spec_val = extracted_raw[pick_count] if len(extracted_raw) > pick_count else 3
 
                     formulas_html = ""
                     for pos_idx, num_val in enumerate(core_nums, start=1):
                         calc_check = (num_val * selected_day * pos_idx) % max_range + 1
-                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم المستخرج من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
+                        formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b>الرقم الفعلي من الجدول {num_val} (الترتيب {pos_idx}):</b> <code>Formula(pos_{pos_idx}) = ({num_val} × Day[{selected_day}] × {pos_idx}) % {max_range} + 1 = {calc_check}</code><br>"
 
                     spec_calc_check = (spec_val * selected_month_num) % special_limit + 1
-                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} المستخرج ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_check}</code>"
+                    formulas_html += f"&nbsp;&nbsp;&nbsp;&nbsp;• <b style='color:#d9534f;'>{special_name} الفعلي ({spec_val}):</b> <code style='color:#d9534f;'>Super_Formula = ({spec_val} × Month[{selected_month_num}]) % {special_limit} + 1 = {spec_calc_check}</code>"
 
-                    # مطابقة رقم السحب تماماً لما يظهر في الجدول (رقم الصف الأصلي دون أي إزاحة)
                     draw_display_num = original_idx
 
                     st.markdown(f"""
                     <div class="formula-box">
                         <b>السحب التاريخي رقم ({draw_display_num}) المطابق للجدول:</b><br>
-                        📌 <b>الأرقام الفعلية (مرتبة تصاعدياً):</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
-                        <br>📐 <b>معادلة الأرقام المستخرجة من تاريخ السحب:</b><br>
+                        📌 <b>الأرقام الفعلية من الجدول (حسب تسلسلها الأصلي):</b> `{" , ".join(map(str, core_nums))}` | <b>{special_name}:</b> <span style="color:#d9534f; font-weight:bold;">`{spec_val}`</span><br>
+                        <br>📐 <b>معادلة الأرقام المستخرجة:</b><br>
                         {formulas_html}
                     </div>
                     """, unsafe_allow_html=True)
             else:
                 st.warning(t["no_res"])
-                for i in range(1, 4):
-                    np.random.seed(selected_day * 100 + selected_month_num * 10 + i)
-                    fallback_nums = sorted(np.random.choice(range(1, max_range + 1), pick_count, replace=False).tolist())
-                    all_historical_extracted_sets.append(set(fallback_nums))
-                    all_historical_specials.append(i % special_limit)
 
             st.markdown("<div class='intersection-box'>", unsafe_allow_html=True)
             st.markdown(f"### 🎯 ثانياً: معادلة وتوقع سحب اليوم ($\mathbf{{09.09.2026}}$) استناداً إلى نتائج الجدول:")
