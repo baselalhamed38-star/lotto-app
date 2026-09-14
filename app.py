@@ -70,9 +70,9 @@ texts = {
         "no_res": "⚠️ لم يتم العثور على سحوبات مطابقة لهذا اليوم والشهر في الجدول.",
         "expander_title": "👁️ استعراض أرشيف السحوبات الكامل",
         "schein_type": "نوع الورقة (Tippschein Type):",
-        "normal_schein": "نورمال شاين (Normal Schein - 6 أرقام)",
-        "system_schein": "سيستيم شاين (System Schein - أرقام مضاعفة ومجموعات)",
-        "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب (Vollsystem):",
+        "normal_schein": "نورمال شاين (Normal Schein)",
+        "system_schein": "سيستيم شاين (System Schein)",
+        "select_lotto_system": "اختر عدد أرقام السيستيم المطلوب:",
         "gen_title": "📅 قسم التوقعات والأربع احتمالات المتجددة لسنة 2026",
         "gen_btn": "🚀 توليد 4 احتمالات جديدة",
         "birth_title": "📅 نافذة تاريخ الميلاد المستقلة",
@@ -95,9 +95,9 @@ texts = {
         "no_res": "⚠️ No matching draws found.",
         "expander_title": "👁️ View Complete Archive",
         "schein_type": "Tippschein Type:",
-        "normal_schein": "Normal Schein (6 numbers)",
-        "system_schein": "System Schein (Extended & Combinations)",
-        "select_lotto_system": "Select Lotto System Count (Vollsystem):",
+        "normal_schein": "Normal Schein",
+        "system_schein": "System Schein",
+        "select_lotto_system": "Select System Count:",
         "gen_title": "📅 2026 Date-Seed 4 New Possibilities Center",
         "gen_btn": "🚀 Generate 4 New Possibilities",
         "birth_title": "📅 Independent Birthdate Window",
@@ -113,6 +113,7 @@ texts = {
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
         "search_title": "📅 Historische Ziehungen im Archiv matchen",
+        "tag": "Tag wählen:",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
         "search_btn": "⚡ Passende Ziehungen anzeigen",
@@ -120,9 +121,9 @@ texts = {
         "no_res": "⚠️ Keine passenden Ziehungen gefunden.",
         "expander_title": "👁️ Vollständiges Archiv anzeigen",
         "schein_type": "Tippschein-Typ:",
-        "normal_schein": "Normaler Schein (6 Zahlen)",
+        "normal_schein": "Normaler Schein",
         "system_schein": "Systemschein",
-        "select_lotto_system": "Lotto System Anzahl wählen (Vollsystem):",
+        "select_lotto_system": "System Anzahl wählen:",
         "gen_title": "📅 2026 Prognose-Center (Neue Möglichkeiten)",
         "gen_btn": "🚀 4 neue Möglichkeiten generieren",
         "birth_title": "📅 Unabhängiges Geburtsdatum-Fenster",
@@ -140,10 +141,9 @@ st.markdown(f"<h1 style='text-align: center; color: #1f77b4;'>{t['title']}</h1>"
 st.markdown("---")
 
 @st.cache_data(show_spinner=False)
-def load_game_files(game_type):
+def load_specific_game_files(game_keyword):
     all_files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx', '.xls', '.csv'))]
-    matched_files = [f for f in all_files if game_type in f.lower()]
-    if not matched_files: matched_files = all_files
+    matched_files = [f for f in all_files if game_keyword in f.lower()]
         
     all_draws = []
     for file_name in matched_files:
@@ -160,8 +160,8 @@ def load_game_files(game_type):
             pass
     return pd.concat(all_draws, ignore_index=True) if all_draws else pd.DataFrame(), matched_files
 
-df_lotto, files_lotto = load_game_files("lotto")
-df_euro, files_euro = load_game_files("euro")
+df_lotto, files_lotto = load_specific_game_files("lotto")
+df_euro, files_euro = load_specific_game_files("euro")
 
 tab1, tab2 = st.tabs([t["lotto_tab"], t["euro_tab"]])
 
@@ -169,13 +169,17 @@ def generate_date_seed_numbers(year, month, day, count=6, max_val=49, modifier=0
     seed_val = (year * 10000) + (month * 100) + day
     np.random.seed((seed_val + modifier) % (2**31 - 1))
     nums = sorted(np.random.choice(range(1, max_val + 1), count, replace=False).tolist())
-    spec_val = (seed_val + modifier) % (12 if max_val == 50 else 10)
+    spec_val = ((seed_val + modifier) % (12 if max_val == 50 else 10)) + (1 if max_val == 50 else 0)
+    if max_val == 50:
+        spec_val = ((seed_val + modifier) % 12) + 1
+    else:
+        spec_val = (seed_val + modifier) % 10
     return nums, spec_val, seed_val
 
 def run_full_features_tab(df, game_name, matched_files, is_euro=False):
-    st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'General Files'}`")
+    st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'No matching files found for ' + game_name}`")
     if df.empty:
-        st.error(f"⚠️ No files found for {game_name}.")
+        st.error(f"⚠️ No files found containing keyword '{game_name.lower()}' in the directory. Please make sure your files have 'lotto' or 'euro' in their names.")
         return
         
     total_rows = len(df)
@@ -242,7 +246,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                 break
 
                     core_nums = []
-                    for col_idx in range(3, min(9, len(row_vals))):
+                    for col_idx in range(3, min(12, len(row_vals))):
                         try:
                             vf = float(row_vals[col_idx])
                             if 1 <= vf <= max_range:
@@ -252,12 +256,12 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     core_nums = core_nums[:5 if is_euro else 6]
 
                     spec_val = 0
-                    if len(row_vals) > 10:
-                        try: spec_val = int(float(row_vals[10]))
+                    if len(row_vals) > len(core_nums) + 3:
+                        try: spec_val = int(float(row_vals[len(core_nums) + 3]))
                         except: spec_val = 0
 
                     gen_nums, gen_spec, seed_v = generate_date_seed_numbers(
-                        extracted_year, selected_month_num, selected_day, len(core_nums) if core_nums else 6, max_range
+                        extracted_year, selected_month_num, selected_day, len(core_nums) if core_nums else (5 if is_euro else 6), max_range
                     )
 
                     st.markdown(f"""
@@ -285,13 +289,22 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         target_date_2026 = st.date_input("اختر التاريخ في 2026:", value=datetime(2026, 9, 9), key=f"d_2026_{game_name}")
 
     schein_mode = st.radio(t["schein_type"], [t["normal_schein"], t["system_schein"]], key=f"schein_2026_{game_name}")
-    selected_count = 5 if is_euro else 6
-    max_limit = 50 if is_euro else 49
-
-    if schein_mode == t["system_schein"]:
-        sys_options = ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"]
-        lotto_sys_choice = st.selectbox(t["select_lotto_system"], sys_options, key=f"l_sys_2026_{game_name}")
-        selected_count = int(lotto_sys_choice.split()[1])
+    
+    if is_euro:
+        selected_count = 5
+        max_limit = 50
+        if schein_mode == t["system_schein"]:
+            sys_options = ["System 5/10 (10 أرقام)", "System 5/12 (12 أرقام)", "System 6/anything"]
+            sys_choice = st.selectbox(t["select_lotto_system"], sys_options, key=f"e_sys_2026_{game_name}")
+            if "10" in sys_choice: selected_count = 10
+            elif "12" in sys_choice: selected_count = 12
+    else:
+        selected_count = 6
+        max_limit = 49
+        if schein_mode == t["system_schein"]:
+            sys_options = ["Vollsystem 007 (7 أرقام)", "Vollsystem 008 (8 أرقام)", "Vollsystem 009 (9 أرقام)", "Vollsystem 010 (10 أرقام)"]
+            lotto_sys_choice = st.selectbox(t["select_lotto_system"], sys_options, key=f"l_sys_2026_{game_name}")
+            selected_count = int(lotto_sys_choice.split()[1])
 
     gen_counter_key = f"counter_gen_2026_{game_name}"
     if gen_counter_key not in st.session_state: st.session_state[gen_counter_key] = 0
@@ -372,4 +385,4 @@ with tab1:
     run_full_features_tab(df_lotto, "Lotto", files_lotto, is_euro=False)
 
 with tab2:
-    run_full_features_tab(df_euro, "Eurojackpot", files_euro, is_euro=True)
+    run_full_features_tab(df_euro, "Euro", files_euro, is_euro=True)
