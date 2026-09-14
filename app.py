@@ -206,13 +206,8 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         if not df.empty:
             for idx, row in df.iterrows():
                 is_matched = False
-                for val in row.values:
+                for val in row.values[:3]:  # البحث فقط في أول أعمدة التاريخ لتجنب مطابقة أرقام السحب بالخطأ
                     if pd.notna(val):
-                        v_str = str(val).strip()
-                        if (f"{selected_day:02d}.{selected_month_num:02d}." in v_str or 
-                            f"{selected_day}.{selected_month_num}." in v_str):
-                            is_matched = True
-                            break
                         dt = pd.to_datetime(val, errors='coerce', dayfirst=True)
                         if pd.notna(dt) and dt.year > 1980 and dt.day == selected_day and dt.month == selected_month_num:
                             is_matched = True
@@ -236,32 +231,28 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                     extracted_year = 2026
                     for val in row_vals[:3]:
                         if pd.notna(val):
-                            v_s = str(val).strip()
-                            if "." in v_s or "-" in v_s:
-                                full_date_str = v_s
-                                dt_parsed = pd.to_datetime(v_s, errors='coerce', dayfirst=True)
-                                if pd.notna(dt_parsed):
-                                    extracted_year = dt_parsed.year
+                            dt_parsed = pd.to_datetime(val, errors='coerce', dayfirst=True)
+                            if pd.notna(dt_parsed) and dt_parsed.year > 1980:
+                                full_date_str = dt_parsed.strftime('%d.%m.%Y')
+                                extracted_year = dt_parsed.year
                                 break
 
-                    # استخراج دقيق للأرقام الأساسية والخاصة بغض النظر عن ترتيب الأعمدة
-                    all_nums_in_row = []
-                    for val in row_vals:
+                    # استخراج الأعمدة المخصصة للأرقام الأساسية (تخطي أول عمودين اللذين يحتويان غالباً على التاريخ أو رقم السحب)
+                    core_nums = []
+                    spec_val = 0
+                    numeric_vals = []
+                    
+                    for val in row_vals[2:]:  # البدء من العمود الثالث لتجنب قراءة التاريخ كأرقام سحب
                         try:
                             vf = float(val)
                             if vf.is_integer() and 1 <= int(vf) <= 50:
-                                all_nums_in_row.append(int(vf))
+                                numeric_vals.append(int(vf))
                         except:
                             pass
-                    
-                    # تصفية واختيار الأرقام حسب اللعبة
-                    core_nums = []
-                    spec_val = 0
-                    
+
                     if is_euro:
-                        # اليوروجاكبوت: 5 أرقام أساسية (1-50) + رقمين يورو زاهل (1-12) أو أرقام متشابهة
-                        valid_core = [n for n in all_nums_in_row if 1 <= n <= 50]
-                        # إزالة التكرارات المحتملة مع المحافظة على الترتيب إذا وجد
+                        # اليوروجاكبوت: أول 5 أرقام (1-50)، والرقمان التاليان هما أرقام اليورو زاهل
+                        valid_core = [n for n in numeric_vals if 1 <= n <= 50]
                         seen = set()
                         unique_core = []
                         for n in valid_core:
@@ -273,7 +264,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                         if len(unique_core) > 5:
                             spec_val = unique_core[5]
                     else:
-                        valid_core = [n for n in all_nums_in_row if 1 <= n <= 49]
+                        valid_core = [n for n in numeric_vals if 1 <= n <= 49]
                         seen = set()
                         unique_core = []
                         for n in valid_core:
@@ -401,7 +392,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         z_nums, z_spec, z_seed = generate_date_seed_numbers(2026, z_idx, 15, selected_count, max_limit, st.session_state[zodiac_key] * 71)
         st.markdown(f"<b>مفتاح البذرة (Seed):</b> <code>{z_seed}</code>", unsafe_allow_html=True)
         nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in z_nums])
-        spec_html = f"<span class='special-badge'>{z_spec}</span>"
+        spec_html = f"<span class='special-badge'>{b_spec}</span>"
         spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
         st.markdown(f"<div style='background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px;'>{nums_html} | <b>{spec_label}:</b> {spec_html}</div>", unsafe_allow_html=True)
 
