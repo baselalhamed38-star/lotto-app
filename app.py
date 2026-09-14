@@ -113,7 +113,6 @@ texts = {
         "euro_tab": "💶 Eurojackpot",
         "file_info": "📁 Zugehörige Dateien:",
         "search_title": "📅 Historische Ziehungen im Archiv matchen",
-        "tag": "Tag wählen:",
         "target_day": "Tag wählen:",
         "target_month": "Monat wählen:",
         "search_btn": "⚡ Passende Ziehungen anzeigen",
@@ -169,7 +168,6 @@ def generate_date_seed_numbers(year, month, day, count=6, max_val=49, modifier=0
     seed_val = (year * 10000) + (month * 100) + day
     np.random.seed((seed_val + modifier) % (2**31 - 1))
     nums = sorted(np.random.choice(range(1, max_val + 1), count, replace=False).tolist())
-    spec_val = ((seed_val + modifier) % (12 if max_val == 50 else 10)) + (1 if max_val == 50 else 0)
     if max_val == 50:
         spec_val = ((seed_val + modifier) % 12) + 1
     else:
@@ -179,7 +177,7 @@ def generate_date_seed_numbers(year, month, day, count=6, max_val=49, modifier=0
 def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'No matching files found for ' + game_name}`")
     if df.empty:
-        st.error(f"⚠️ No files found containing keyword '{game_name.lower()}' in the directory. Please make sure your files have 'lotto' or 'euro' in their names.")
+        st.error(f"⚠️ No files found containing keyword '{game_name.lower()}' in the directory.")
         return
         
     total_rows = len(df)
@@ -227,6 +225,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
             st.markdown("---")
             max_range = 50 if is_euro else 49
             special_name = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+            required_count = 5 if is_euro else 6
 
             if matched_rows:
                 st.success(f"{t['found_res']} (اليوم: {selected_day}، الشهر: {selected_month_num}) — عدد السحوبات: {len(matched_rows)}")
@@ -245,23 +244,48 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                     extracted_year = dt_parsed.year
                                 break
 
-                    core_nums = []
-                    for col_idx in range(3, min(12, len(row_vals))):
+                    # استخراج دقيق للأرقام الأساسية والخاصة بغض النظر عن ترتيب الأعمدة
+                    all_nums_in_row = []
+                    for val in row_vals:
                         try:
-                            vf = float(row_vals[col_idx])
-                            if 1 <= vf <= max_range:
-                                core_nums.append(int(vf))
+                            vf = float(val)
+                            if vf.is_integer() and 1 <= int(vf) <= 50:
+                                all_nums_in_row.append(int(vf))
                         except:
                             pass
-                    core_nums = core_nums[:5 if is_euro else 6]
-
+                    
+                    # تصفية واختيار الأرقام حسب اللعبة
+                    core_nums = []
                     spec_val = 0
-                    if len(row_vals) > len(core_nums) + 3:
-                        try: spec_val = int(float(row_vals[len(core_nums) + 3]))
-                        except: spec_val = 0
+                    
+                    if is_euro:
+                        # اليوروجاكبوت: 5 أرقام أساسية (1-50) + رقمين يورو زاهل (1-12) أو أرقام متشابهة
+                        valid_core = [n for n in all_nums_in_row if 1 <= n <= 50]
+                        # إزالة التكرارات المحتملة مع المحافظة على الترتيب إذا وجد
+                        seen = set()
+                        unique_core = []
+                        for n in valid_core:
+                            if n not in seen:
+                                seen.add(n)
+                                unique_core.append(n)
+                        
+                        core_nums = unique_core[:5]
+                        if len(unique_core) > 5:
+                            spec_val = unique_core[5]
+                    else:
+                        valid_core = [n for n in all_nums_in_row if 1 <= n <= 49]
+                        seen = set()
+                        unique_core = []
+                        for n in valid_core:
+                            if n not in seen:
+                                seen.add(n)
+                                unique_core.append(n)
+                        core_nums = unique_core[:6]
+                        if len(unique_core) > 6:
+                            spec_val = unique_core[6] % 10
 
                     gen_nums, gen_spec, seed_v = generate_date_seed_numbers(
-                        extracted_year, selected_month_num, selected_day, len(core_nums) if core_nums else (5 if is_euro else 6), max_range
+                        extracted_year, selected_month_num, selected_day, required_count, max_range
                     )
 
                     st.markdown(f"""
@@ -294,7 +318,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         selected_count = 5
         max_limit = 50
         if schein_mode == t["system_schein"]:
-            sys_options = ["System 5/10 (10 أرقام)", "System 5/12 (12 أرقام)", "System 6/anything"]
+            sys_options = ["System 5/10 (10 أرقام)", "System 5/12 (12 أرقام)"]
             sys_choice = st.selectbox(t["select_lotto_system"], sys_options, key=f"e_sys_2026_{game_name}")
             if "10" in sys_choice: selected_count = 10
             elif "12" in sys_choice: selected_count = 12
