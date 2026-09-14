@@ -139,7 +139,7 @@ t = texts[lang_choice]
 st.markdown(f"<h1 style='text-align: center; color: #1f77b4;'>{t['title']}</h1>", unsafe_allow_html=True)
 st.markdown("---")
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(persist="disk")
 def load_specific_game_files(game_keyword):
     all_files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx', '.xls', '.csv'))]
     matched_files = [f for f in all_files if game_keyword in f.lower()]
@@ -169,10 +169,10 @@ def generate_date_seed_numbers(year, month, day, count=6, max_val=49, modifier=0
     np.random.seed((seed_val + modifier) % (2**31 - 1))
     nums = sorted(np.random.choice(range(1, max_val + 1), count, replace=False).tolist())
     if max_val == 50:
-        spec_val = ((seed_val + modifier) % 12) + 1
+        spec_vals = sorted(np.random.choice(range(1, 13), 2, replace=False).tolist())
     else:
-        spec_val = (seed_val + modifier) % 10
-    return nums, spec_val, seed_val
+        spec_vals = [(seed_val + modifier) % 10]
+    return nums, spec_vals, seed_val
 
 def run_full_features_tab(df, game_name, matched_files, is_euro=False):
     st.info(f"{t['file_info']} `{' , '.join(matched_files) if matched_files else 'No matching files found for ' + game_name}`")
@@ -206,7 +206,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         if not df.empty:
             for idx, row in df.iterrows():
                 is_matched = False
-                for val in row.values[:3]:  # البحث فقط في أول أعمدة التاريخ لتجنب مطابقة أرقام السحب بالخطأ
+                for val in row.values[:3]:
                     if pd.notna(val):
                         dt = pd.to_datetime(val, errors='coerce', dayfirst=True)
                         if pd.notna(dt) and dt.year > 1980 and dt.day == selected_day and dt.month == selected_month_num:
@@ -219,7 +219,7 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         if st.button(t["search_btn"], key=btn_search_key):
             st.markdown("---")
             max_range = 50 if is_euro else 49
-            special_name = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+            special_name = "Eurozahlen (1-12)" if is_euro else "Superzahl (0-9)"
             required_count = 5 if is_euro else 6
 
             if matched_rows:
@@ -237,21 +237,19 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                 extracted_year = dt_parsed.year
                                 break
 
-                    # استخراج الأعمدة المخصصة للأرقام الأساسية (تخطي أول عمودين اللذين يحتويان غالباً على التاريخ أو رقم السحب)
-                    core_nums = []
-                    spec_val = 0
                     numeric_vals = []
-                    
-                    for val in row_vals[2:]:  # البدء من العمود الثالث لتجنب قراءة التاريخ كأرقام سحب
+                    for val in row_vals[2:]:
                         try:
                             vf = float(val)
-                            if vf.is_integer() and 1 <= int(vf) <= 50:
+                            if vf.is_integer() and int(vf) > 0:
                                 numeric_vals.append(int(vf))
                         except:
                             pass
 
+                    core_nums = []
+                    spec_vals = []
+                    
                     if is_euro:
-                        # اليوروجاكبوت: أول 5 أرقام (1-50)، والرقمان التاليان هما أرقام اليورو زاهل
                         valid_core = [n for n in numeric_vals if 1 <= n <= 50]
                         seen = set()
                         unique_core = []
@@ -261,8 +259,13 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                 unique_core.append(n)
                         
                         core_nums = unique_core[:5]
-                        if len(unique_core) > 5:
-                            spec_val = unique_core[5]
+                        euro_pool = [n for n in numeric_vals if 1 <= n <= 12 and n not in core_nums]
+                        if len(euro_pool) >= 2:
+                            spec_vals = euro_pool[:2]
+                        elif len(unique_core) > 5:
+                            spec_vals = unique_core[5:7]
+                        else:
+                            spec_vals = [1, 2]
                     else:
                         valid_core = [n for n in numeric_vals if 1 <= n <= 49]
                         seen = set()
@@ -273,18 +276,23 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
                                 unique_core.append(n)
                         core_nums = unique_core[:6]
                         if len(unique_core) > 6:
-                            spec_val = unique_core[6] % 10
+                            spec_vals = [unique_core[6] % 10]
+                        else:
+                            spec_vals = [0]
 
-                    gen_nums, gen_spec, seed_v = generate_date_seed_numbers(
+                    gen_nums, gen_specs, seed_v = generate_date_seed_numbers(
                         extracted_year, selected_month_num, selected_day, required_count, max_range
                     )
+
+                    spec_html_str = "".join([f"<span class='special-badge'>{s}</span>" for s in spec_vals])
+                    gen_spec_html_str = "".join([f"<span class='special-badge'>{s}</span>" for s in gen_specs])
 
                     st.markdown(f"""
                     <div class="formula-box">
                         <b>📌 سحب تاريخ: <span style="color:#d9534f;">{full_date_str}</span> (الصف: {original_idx})</b><br><br>
-                        <b>أرقام الأرشيف الفعلية:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in core_nums])} | <b>{special_name}:</b> <span class='special-badge'>{spec_val}</span><br><br>
+                        <b>أرقام الأرشيف الفعلية:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in core_nums])} | <b>{special_name}:</b> {spec_html_str}<br><br>
                         🔑 <b>المفتاح الزمني للتاريخ (Seed):</b> <code>{seed_v}</code><br>
-                        🎯 <b>الأرقام المتولدة برمجياً لنفس التاريخ:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in gen_nums])} | <b>الخاصة:</b> <span class='special-badge'>{gen_spec}</span>
+                        🎯 <b>الأرقام المتولدة برمجياً لنفس التاريخ:</b> {" ".join([f"<span class='number-badge'>{n}</span>" for n in gen_nums])} | <b>الخاصة:</b> {gen_spec_html_str}
                     </div>
                     """, unsafe_allow_html=True)
             else:
@@ -345,11 +353,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.markdown("### 🎲 الاحتمالات الأربعة المقترحة:")
         for i in range(1, 5):
             modifier = (st.session_state[gen_counter_key] * 100) + (i * 999)
-            p_nums, p_spec, _ = generate_date_seed_numbers(y, m, d, selected_count, max_limit, modifier)
+            p_nums, p_specs, _ = generate_date_seed_numbers(y, m, d, selected_count, max_limit, modifier)
             
             nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in p_nums])
-            spec_html = f"<span class='special-badge'>{p_spec}</span>"
-            spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+            spec_html = "".join([f"<span class='special-badge'>{s}</span>" for s in p_specs])
+            spec_label = "Eurozahlen (1-12)" if is_euro else "Superzahl (0-9)"
             
             st.markdown(f"""
             <div style="background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:10px;">
@@ -369,11 +377,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         st.session_state[birth_key] += 1
         
     if st.session_state[birth_key] > 0:
-        b_nums, b_spec, b_seed = generate_date_seed_numbers(b_date.year, b_date.month, b_date.day, selected_count, max_limit, st.session_state[birth_key] * 53)
+        b_nums, b_specs, b_seed = generate_date_seed_numbers(b_date.year, b_date.month, b_date.day, selected_count, max_limit, st.session_state[birth_key] * 53)
         st.markdown(f"<b>مفتاح البذرة (Seed):</b> <code>{b_seed}</code>", unsafe_allow_html=True)
         nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in b_nums])
-        spec_html = f"<span class='special-badge'>{b_spec}</span>"
-        spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+        spec_html = "".join([f"<span class='special-badge'>{s}</span>" for s in b_specs])
+        spec_label = "Eurozahlen (1-12)" if is_euro else "Superzahl (0-9)"
         st.markdown(f"<div style='background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px;'>{nums_html} | <b>{spec_label}:</b> {spec_html}</div>", unsafe_allow_html=True)
 
     st.markdown("---")
@@ -389,11 +397,11 @@ def run_full_features_tab(df, game_name, matched_files, is_euro=False):
         
     if st.session_state[zodiac_key] > 0:
         z_idx = zodiac_signs.index(z_choice) + 1
-        z_nums, z_spec, z_seed = generate_date_seed_numbers(2026, z_idx, 15, selected_count, max_limit, st.session_state[zodiac_key] * 71)
+        z_nums, z_specs, z_seed = generate_date_seed_numbers(2026, z_idx, 15, selected_count, max_limit, st.session_state[zodiac_key] * 71)
         st.markdown(f"<b>مفتاح البذرة (Seed):</b> <code>{z_seed}</code>", unsafe_allow_html=True)
         nums_html = "".join([f"<span class='number-badge'>{num}</span>" for num in z_nums])
-        spec_html = f"<span class='special-badge'>{b_spec}</span>"
-        spec_label = "Eurozahl (1-12)" if is_euro else "Superzahl (0-9)"
+        spec_html = "".join([f"<span class='special-badge'>{s}</span>" for s in z_specs])
+        spec_label = "Eurozahlen (1-12)" if is_euro else "Superzahl (0-9)"
         st.markdown(f"<div style='background:#ffffff; border:1px solid #ddd; padding:10px; border-radius:8px;'>{nums_html} | <b>{spec_label}:</b> {spec_html}</div>", unsafe_allow_html=True)
 
 with tab1:
